@@ -1,0 +1,31 @@
+{
+  "name": "depot-mcp",
+  "version": "0.1.0",
+  "type": "server",
+  "runtime": "python",
+  "entry_point": "src/depot_mcp/__main__.py",
+  "dependencies": [
+    "fastmcp>=3.2.0",
+    "lancedb>=0.15.0",
+    "fastembed>=0.4.0",
+    "prefab-ui>=0.14.0"
+  ],
+  "build": {
+    "include": [
+      "src/**/*.py",
+      "src/depot_mcp/skills/*.md",
+      "web_sota/backend/**/*.py",
+      "web_sota/frontend/dist/**/*"
+    ],
+    "exclude": [
+      "tests/",
+      "node_modules/",
+      ".venv/"
+    ]
+  },
+  "scripts": {
+    "build": "mcpb build",
+    "pack": "mcpb pack . dist/depot-mcp.mcpb",
+    "test": "uv run pytest -v"
+  }
+}

@@ -1,0 +1,29 @@
+# depot-mcp
+
+Centralized fleet file depot with tiered NVMe/spinner storage, LanceDB vector search, and SQLite FTS5 sidecar.
+
+## Overview
+- **Ports**: 10726 (frontend), 10727 (backend + MCP)
+- **Host**: Goliath PC (permanently running)
+- **Storage**: NVMe fast tier (C:/D:/N:) + HDD slow tier
+- **Search**: LanceDB vector search + SQLite FTS5 keyword search (sidecar)
+- **Access**: REST API + MCP tools + optional SMB share
+
+## Key Files
+- `src/depot_mcp/server.py` — FastMCP + FastAPI unified gateway
+- `src/depot_mcp/config.py` — Configuration and drive discovery
+- `src/depot_mcp/storage/` — File store, tier manager, tier policies
+- `src/depot_mcp/metadata/` — LanceDB store, FTS5 store, indexer, search
+- `src/depot_mcp/tools/depot_tool.py` — Portmanteau MCP tool
+- `src/depot_mcp/importers/` — Migration importers (arxiv, qcad, ahk, generic)
+- `web-sota/backend/` — FastAPI REST routes
+- `web-sota/frontend/` — Vite + React dashboard
+
+## Quick Start
+```powershell
+# Start full stack
+.\web-sota\start.ps1
+
+# MCP server only (stdio)
+uv run depot-mcp --transport stdio
+```

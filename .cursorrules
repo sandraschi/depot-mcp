@@ -1,0 +1,22 @@
+You are working on depot-mcp, a centralized fleet file depot with tiered storage.
+
+## Project Context
+- **Package**: `schip-mcp-depot` (import: `depot_mcp`)
+- **Ports**: 10726 (Vite frontend), 10727 (FastAPI + FastMCP backend)
+- **Python**: 3.12+, FastMCP 3.2+, Pydantic v2
+- **Frontend**: React 18 + Vite 5 + Tailwind CSS 3 + TypeScript 5.6
+- **Search**: LanceDB (vector) + SQLite FTS5 (keyword sidecar)
+
+## Key Conventions
+- Portmanteau MCP tools: single `@mcp.tool()` with `action: Literal[...]`
+- Conversational returns: `{"success": bool, ...}` dicts
+- Pydantic v2 only: `model.model_dump()`, NOT `model.dict()`
+- Docstring SOTA: no `Args:`, use `Annotated[T, Field(description="...")]`
+- PowerShell native syntax only (no &&, tail, grep, cat)
+- Fleet standard ports from WEBAPP_PORTS.md
+
+## Storage
+- Fast tier drives: C:, D:, N: (NVMe)
+- Slow tier drives: E:, F:, ... (HDD)
+- Default paths: D:\depot\fast\, E:\depot\slow\
+- Configurable via env: DEPOT_FAST_ROOT, DEPOT_SLOW_ROOT

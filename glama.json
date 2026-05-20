@@ -1,0 +1,14 @@
+{
+  "name": "depot-mcp",
+  "description": "Centralized fleet file depot with tiered NVMe/spinner storage, LanceDB vector search, and SQLite FTS5 sidecar",
+  "version": "0.1.0",
+  "transport": {
+    "type": "http",
+    "url": "http://localhost:10727/mcp"
+  },
+  "capabilities": {
+    "tools": [
+      "depot_management"
+    ]
+  }
+}

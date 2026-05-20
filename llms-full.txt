@@ -1,0 +1,48 @@
+# depot-mcp — Full Documentation
+
+Centralized fleet file depot with tiered NVMe/spinner storage, LanceDB vector search, and SQLite FTS5 sidecar.
+
+## Architecture
+
+### Storage Topology
+- **Fast tier**: NVMe/SSD drives (C:, D:, N:) — hot files, active projects
+- **Slow tier**: HDD spinners (E:, F:, ...) — cold storage, archives, large models
+- **Default paths**: D:\depot\fast\ (fast), E:\depot\slow\ (slow)
+- **Drive discovery**: Auto-scans at boot, pools by tier
+
+### Tier Policies
+Three switchable strategies:
+1. **LRU** (default): Auto-evict cold files to slow tier after 7 days
+2. **Explicit**: Uploader declares tier, no automatic migration
+3. **Tag-based**: Config-driven rules (e.g. *.gguf→slow, *.blend→fast)
+
+### Search Engine
+Dual search with automatic merge:
+- **LanceDB**: Vector search (384-dim bge-small-en-v1.5) for semantic discovery
+- **SQLite FTS5**: BM25 keyword search for exact/fuzzy matching
+- **Merge**: Interleaved results, deduplicated by file_id
+
+### Access Surface
+- **REST API** (FastAPI on :10727): CRUD, search, stats, migration
+- **MCP Tool** (FastMCP 3.2 on /mcp): Single portmanteau `depot_management` tool
+- **SMB Share** (optional): `\\goliath\depot` for direct filesystem access
+
+## REST API
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | /api/v1/depot/upload | Multipart file upload |
+| GET | /api/v1/depot/download/{id} | Stream file download |
+| GET | /api/v1/depot/search | Vector + keyword search |
+| GET | /api/v1/depot/stats | Storage usage statistics |
+| DELETE | /api/v1/depot/files/{id} | Delete file |
+| PATCH | /api/v1/depot/files/{id} | Update tags/tier |
+| POST | /api/v1/depot/migrate | Trigger tier migration |
+| POST | /api/v1/depot/import | Import from fleet depot |
+| GET | /api/capabilities | Service capabilities |
+
+## MCP Tool: depot_management
+
+Portmanteau tool with actions: upload, download, search, stats, migrate, delete, tag.
+
+Returns: `{"success": bool, "action": str, "data": dict, "error": str|None}`

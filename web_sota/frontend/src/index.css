@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #334155 transparent;
+}
+
+body {
+  @apply antialiased bg-gray-950 text-gray-100;
+}
+
+.glass {
+  @apply bg-gray-900/80 backdrop-blur-xl border border-gray-800/50;
+}
+
+.glass-hover {
+  @apply hover:bg-gray-800/80 hover:border-gray-700/50 transition-all duration-200;
+}
+
+.card-glass {
+  @apply rounded-xl border border-gray-800/50 bg-gray-900/40 backdrop-blur-sm;
+}

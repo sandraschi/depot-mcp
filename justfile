@@ -1,8 +1,8 @@
-set windows-shell := ["pwsh.exe", "-NoLogo", "-Command"]
+﻿set windows-shell := ["pwsh.exe", "-NoLogo", "-Command"]
 
 # Open the interactive recipe dashboard in the browser
 default:
-    @pwsh.exe -NoProfile -ExecutionPolicy Bypass -File ../mcp-central-docs/scripts/just-dashboard.ps1 -Path .
+    @just --list
 
 # ── Quality ───────────────────────────────────────────────────────────────────
 
@@ -94,3 +94,4 @@ clean:
     Remove-Item -Recurse -Force -LiteralPath '.venv' -ErrorAction SilentlyContinue
     Remove-Item -Recurse -Force -LiteralPath 'web_sota/frontend/node_modules' -ErrorAction SilentlyContinue
     Write-Host 'Cleaned .venv and node_modules'
+

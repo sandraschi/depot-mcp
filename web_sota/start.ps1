@@ -36,11 +36,8 @@ if ($killed) {
 # Start backend from repo root so -m web_sota.backend.server resolves
 $uvPath = if (Get-Command "C:\Users\sandr\.local\bin\uv.exe" -ErrorAction SilentlyContinue) { "C:\Users\sandr\.local\bin\uv.exe" } else { "uv" }
 Write-Host "[backend] Starting FastAPI + FastMCP on :$BackendPort..." -ForegroundColor Green
-$backendJob = Start-Job -Name "depot-backend" -ScriptBlock {
-    param($port, $repo, $uvExe)
-    Set-Location $repo
-    & $uvExe run python -m web_sota.backend.server --port $port 2>&1 | Out-File "$env:TEMP\depot-backend.log"
-} -ArgumentList $BackendPort, $repoDir, $uvPath
+$backendCmd = "Set-Location '$repoDir'; & '$uvPath' run python -m web_sota.backend.server --port $BackendPort"
+$BackendProc = Start-Process powershell -ArgumentList "-NoProfile", "-WindowStyle", "Normal", "-Command", $backendCmd -PassThru
 
 # Wait for backend readiness
 Write-Host "[backend] Waiting for readiness..." -ForegroundColor Gray
@@ -48,13 +45,8 @@ $ready = $false
 for ($i = 0; $i -lt 90; $i++) {
     Start-Sleep -Seconds 1
     # Bail early if the backend job died prematurely
-    if ($backendJob.State -eq "Failed" -or $backendJob.State -eq "Completed") {
-        Write-Host "[backend] Process exited prematurely (state=$($backendJob.State))" -ForegroundColor Red
-        $backendJob | Receive-Job -ErrorAction SilentlyContinue
-        if (Test-Path "$env:TEMP\depot-backend.log") {
-            Write-Host "[backend] Last log lines:" -ForegroundColor Red
-            Get-Content "$env:TEMP\depot-backend.log" -Tail 20
-        }
+    if ($BackendProc.HasExited) {
+        Write-Host "[backend] Process exited prematurely (exit=$($BackendProc.ExitCode))" -ForegroundColor Red
         exit 1
     }
     try {
@@ -68,11 +60,7 @@ for ($i = 0; $i -lt 90; $i++) {
     catch { }
 }
 if (-not $ready) {
-    Write-Host "[backend] Failed to reach after 90s. Dumping job output:" -ForegroundColor Red
-    $backendJob | Receive-Job -ErrorAction SilentlyContinue
-    if (Test-Path "$env:TEMP\depot-backend.log") {
-        Get-Content "$env:TEMP\depot-backend.log" -Tail 30
-    }
+    Write-Host "[backend] Failed to reach /api/capabilities after 90s." -ForegroundColor Red
     exit 1
 }
 
@@ -102,45 +90,6 @@ if (-not (Test-Path -LiteralPath (Join-Path $frontendDir "node_modules"))) {
     npm install
 }
 
-# Start frontend in background
+Set-Location $frontendDir
 Write-Host "[frontend] Starting Vite dev server on :$FrontendPort..." -ForegroundColor Green
-$frontendJob = Start-Job -Name "depot-frontend" -ScriptBlock {
-    param($dir, $port)
-    Set-Location $dir
-    $env:VITE_PORT = $port
-    npm run dev -- --port $port --host 127.0.0.1
-} -ArgumentList $frontendDir, $FrontendPort
-
-# Wait for frontend readiness, then open browser
-Write-Host "[frontend] Waiting for readiness..." -ForegroundColor Gray
-$feReady = $false
-for ($i = 0; $i -lt 30; $i++) {
-    Start-Sleep -Seconds 1
-    # Bail early if the frontend job died prematurely
-    if ($frontendJob.State -eq "Failed" -or $frontendJob.State -eq "Completed") {
-        Write-Host "[frontend] Process exited prematurely (state=$($frontendJob.State))" -ForegroundColor Red
-        $frontendJob | Receive-Job -ErrorAction SilentlyContinue
-        break
-    }
-    try {
-        $r = Invoke-WebRequest -Uri "http://127.0.0.1:$FrontendPort" -TimeoutSec 2 -UseBasicParsing -ErrorAction SilentlyContinue
-        if ($r.StatusCode -eq 200) {
-            $feReady = $true
-            Write-Host "[frontend] Ready on http://127.0.0.1:$FrontendPort" -ForegroundColor Green
-            Start-Process "http://127.0.0.1:$FrontendPort/app/"
-            break
-        }
-    } catch {}
-}
-if (-not $feReady) {
-    Write-Host "[frontend] Frontend not reachable, continuing anyway" -ForegroundColor Yellow
-}
-
-# Wait for frontend job (blocking)
-Write-Host "[frontend] Dashboard open in browser. Press Ctrl+C to stop." -ForegroundColor Gray
-Wait-Job -Name "depot-frontend" -ErrorAction SilentlyContinue | Out-Null
-
-# Cleanup on exit
-Write-Host "[backend] Stopping..." -ForegroundColor Yellow
-Stop-Job -Name "depot-backend" -ErrorAction SilentlyContinue
-Remove-Job -Name "depot-backend" -Force -ErrorAction SilentlyContinue
+npm run dev -- --port $FrontendPort --host 127.0.0.1 --strictPort

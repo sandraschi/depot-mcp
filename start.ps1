@@ -6,7 +6,7 @@ $ErrorActionPreference = "Stop"
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 Write-Host "╔══════════════════════════════════════════════╗" -ForegroundColor Cyan
-Write-Host "║        depot-mcp — Fleet File Depot           ║" -ForegroundColor Cyan
+Write-Host "║        depot-mcp - Fleet File Depot           ║" -ForegroundColor Cyan
 Write-Host "╚══════════════════════════════════════════════╝" -ForegroundColor Cyan
 
 # Delegate to web_sota

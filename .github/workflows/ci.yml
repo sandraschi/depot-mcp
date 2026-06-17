@@ -12,6 +12,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Normalize git line endings
+        run: git config --global core.autocrlf false
 
       - name: Install uv
         run: |

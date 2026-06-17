@@ -8,7 +8,7 @@ $repoDir = Split-Path $scriptDir -Parent
 
 $FrontendPort = 10726
 $BackendPort = 10727
-$FleetStartPath = Join-Path $ProjectRoot "scripts\FleetStartMode.ps1"
+$FleetStartPath = Join-Path $repoDir "scripts\FleetStartMode.ps1"
 if (-not (Test-Path -LiteralPath $FleetStartPath)) {
     Write-Host "ERROR: Missing vendored launcher helper: $FleetStartPath" -ForegroundColor Red
     exit 1

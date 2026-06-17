@@ -14,15 +14,16 @@ export default function FileDetail() {
 
   useEffect(() => {
     if (!id) return;
-    fetch("/api/v1/depot/search?q=*&limit=100&mode=keyword")
-      .then((r) => r.json())
-      .then((data) => {
-        const found = (data.results || []).find((f: any) => f.file_id === id);
-        if (found) {
-          setFile(found);
-          setTags((found.tags || []).join(", "));
-        }
-      });
+    fetch(`/api/v1/depot/files/${id}`)
+      .then((r) => {
+        if (!r.ok) throw new Error("not found");
+        return r.json();
+      })
+      .then((found) => {
+        setFile(found);
+        setTags((found.tags || []).join(", "));
+      })
+      .catch(() => setFile(null));
   }, [id]);
 
   async function download() {

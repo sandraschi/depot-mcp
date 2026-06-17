@@ -72,11 +72,16 @@ async def list_models(provider: str | None = None) -> dict[str, Any]:
         raise HTTPException(500, detail=str(e)) from e
 
 
+class LoadModelRequest(BaseModel):
+    model_name: str
+    provider: str = "ollama"
+
+
 @router.post("/models/load", summary="Load a model on a provider")
-async def load_model(model_name: str, provider: str = "ollama") -> dict[str, Any]:
+async def load_model(body: LoadModelRequest) -> dict[str, Any]:
     try:
         manager = get_llm_manager()
-        result = await manager.load_model(model_name, provider)
+        result = await manager.load_model(body.model_name, body.provider)
         return result
     except Exception as e:
         logger.exception("Failed to load model")

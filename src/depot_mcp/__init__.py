@@ -1,11 +1,10 @@
 """depot-mcp — Centralized fleet file depot."""
 
 
-def main():
-    from depot_mcp.server import DepoMCPServer
+def main() -> None:
+    from depot_mcp.__main__ import main as cli_main
 
-    server = DepoMCPServer()
-    server.run_stdio()
+    cli_main()
 
 
 if __name__ == "__main__":

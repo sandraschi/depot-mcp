@@ -89,9 +89,17 @@ class DepoConfig(BaseSettings):
 
     @field_validator("fast_root", "slow_root", mode="before")
     @classmethod
-    def ensure_dirs(cls, v: Path) -> Path:
-        v.mkdir(parents=True, exist_ok=True)
-        return v
+    def ensure_tier_dirs(cls, v: Path | str) -> Path:
+        path = Path(v) if not isinstance(v, Path) else v
+        path.mkdir(parents=True, exist_ok=True)
+        return path
+
+    @field_validator("lancedb_path", "fts_db_path", "data_dir", mode="before")
+    @classmethod
+    def ensure_data_parents(cls, v: Path | str) -> Path:
+        path = Path(v) if not isinstance(v, Path) else v
+        path.parent.mkdir(parents=True, exist_ok=True)
+        return path
 
     @property
     def drives(self) -> dict[str, list[str]]:

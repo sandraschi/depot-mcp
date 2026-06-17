@@ -18,7 +18,7 @@ export default function Browse() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/v1/depot/search?q=*&limit=50")
+    fetch("/api/v1/depot/files?limit=50")
       .then((r) => r.json())
       .then((data) => setFiles(data.results || []))
       .finally(() => setLoading(false));

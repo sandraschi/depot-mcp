@@ -55,9 +55,9 @@ class LanceStore:
             pa.field("content_preview", pa.string()),
         ])
         self.db = lancedb.connect(str(self.db_path))
-        if TABLE_NAME in self.db.table_names():
+        try:
             self.table = self.db.open_table(TABLE_NAME)
-        else:
+        except Exception:
             self.table = self.db.create_table(TABLE_NAME, schema=schema, mode="create")
 
         if embed_use_gpu(repo_root_from_here()):

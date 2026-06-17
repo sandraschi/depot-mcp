@@ -50,6 +50,22 @@ def _register_fastmcp_32_parity(mcp: FastMCP, config: DepoConfig) -> None:
         logger.debug("Skills provider registration skipped: %s", e)
 
 
+def register_mcp_surface(
+    mcp: FastMCP,
+    server: DepoMCPServer,
+    config: DepoConfig,
+    *,
+    agentic: bool = False,
+) -> None:
+    """Register depot tools, prompts, and skills on any FastMCP instance."""
+    from depot_mcp.tools.depot_tool import register_depot_tool
+
+    register_depot_tool(mcp, server=server)
+    _register_fastmcp_32_parity(mcp, config)
+    if agentic:
+        _enable_agentic_mode(mcp, config)
+
+
 def _enable_agentic_mode(mcp: FastMCP, config: DepoConfig) -> None:
     """Enable CodeMode BM25 discovery and sampling for agentic workflows."""
     try:
@@ -91,28 +107,36 @@ class DepoMCPServer:
             allow_origins=[
                 "http://localhost:10726",
                 "http://127.0.0.1:10726",
+                "http://goliath:10726",
                 "http://localhost:10727",
                 "http://127.0.0.1:10727",
+                "http://goliath:10727",
+                "http://tauri.localhost",
+                "https://tauri.localhost",
+                "tauri://localhost",
             ],
             allow_credentials=True,
             allow_methods=["*"],
             allow_headers=["*"],
         )
 
-    async def initialize(self) -> None:
-        """Initialize all backends and register tools + FastMCP 3.2 features."""
+    async def setup(self) -> None:
+        """Initialize storage backends (idempotent)."""
         async with self._lock:
+            if getattr(self, "_setup_done", False):
+                return
             self.file_store.init_dirs()
             await self.lance_store.initialize()
             await self.fts_store.initialize()
             await self.llm_manager.glom_local_providers_if_up()
+            self._setup_done = True
 
-            from depot_mcp.tools.depot_tool import register_depot_tool
-            register_depot_tool(self.mcp, server=self)
-            _register_fastmcp_32_parity(self.mcp, self.config)
-
-            if self.agentic:
-                _enable_agentic_mode(self.mcp, self.config)
+    async def initialize(self) -> None:
+        """Initialize backends and register tools on this server's MCP instance."""
+        await self.setup()
+        if not getattr(self, "_tools_registered", False):
+            register_mcp_surface(self.mcp, self, self.config, agentic=self.agentic)
+            self._tools_registered = True
 
     def run_stdio(self) -> None:
         self.mcp.run(transport="stdio")
@@ -138,10 +162,26 @@ class DepoMCPServer:
         await server.serve()
 
     def _mount_routes(self) -> None:
+        if getattr(self, "_routes_mounted", False):
+            return
+
+        repo_root = Path(__file__).resolve().parents[2]
+        import sys
+
+        if str(repo_root) not in sys.path:
+            sys.path.insert(0, str(repo_root))
+
         from web_sota.backend.routes.capabilities import router as capabilities_router
-        from web_sota.backend.routes.depot import router as depot_router
+        from web_sota.backend.routes.depot import create_router
         from web_sota.backend.routes.llm import router as llm_router
 
+        depot_router = create_router(self)
         self.app.include_router(depot_router, prefix="/api/v1")
         self.app.include_router(capabilities_router, prefix="/api")
         self.app.include_router(llm_router, prefix="")
+
+        @self.app.get("/health")
+        async def health() -> dict[str, str]:
+            return {"status": "ok", "service": "depot-mcp"}
+
+        self._routes_mounted = True

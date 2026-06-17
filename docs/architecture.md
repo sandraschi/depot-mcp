@@ -62,6 +62,21 @@ depot-mcp maintains two search indexes in parallel:
 - **Query**: `tbl.search(vector).where("tier = 'fast'").limit(20)`
 - **Use case**: Semantic search — "find files like this Blender project"
 
+#### GPU embedding (fleet standard, Goliath / RTX)
+
+One-time install, then GPU reindex of all depot vectors:
+
+```powershell
+just rag-gpu-install   # fastembed-gpu + onnxruntime-gpu + NVIDIA CUDA 12 pip runtimes (~1.5 GB)
+just rag-gpu           # re-embed all indexed files (batch 256)
+just rag               # CPU reindex (batch 64)
+just rag-cpu-install   # revert to CPU onnxruntime stack
+```
+
+**Rules:** Use `just rag` / `just rag-gpu` (venv python via `scripts/rag-python.ps1`) — not `uv run` while GPU mode is active. Upload/index during normal server operation also uses GPU when `.venv/rag-gpu-mode` exists or `RAG_GPU=1`.
+
+See `mcp-central-docs/standards/patterns/FLEET_RAG_GPU.md`.
+
 ### SQLite FTS5 (Keyword)
 
 - **Tokenization**: Porter stemmer + Unicode61

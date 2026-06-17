@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import time
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Callable
 
 if TYPE_CHECKING:
     import lancedb
@@ -27,12 +27,15 @@ class LanceStore:
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self.db: lancedb.DBConnection | None = None
         self.embedder: TextEmbedding | None = None
+        self.embed_device: str = "cpu"
         self.embed_batch_size: int = 64
         self.table: object | None = None
 
     async def initialize(self) -> None:
         import lancedb
         import pyarrow as pa
+
+        from depot_mcp.rag.fastembed_gpu import embed_use_gpu, repo_root_from_here
 
         schema = pa.schema([
             pa.field("id", pa.string()),
@@ -56,17 +59,20 @@ class LanceStore:
         else:
             self.table = self.db.create_table(TABLE_NAME, schema=schema, mode="create")
 
+        if embed_use_gpu(repo_root_from_here()):
+            self._get_embedder()
+
     def _get_embedder(self):
         if self.embedder is None:
             from depot_mcp.rag.fastembed_gpu import create_text_embedding, repo_root_from_here
 
             cache = str(self.db_path / "cache")
-            self.embedder, device, self.embed_batch_size = create_text_embedding(
+            self.embedder, self.embed_device, self.embed_batch_size = create_text_embedding(
                 self.config.embedding_model,
                 cache,
                 repo_root=repo_root_from_here(),
             )
-            logger.info("Embed device: %s (batch %s)", device, self.embed_batch_size)
+            logger.info("[rag] Embed device: %s (batch %s)", self.embed_device, self.embed_batch_size)
         return self.embedder
 
     def _build_search_text(self, meta: dict) -> str:
@@ -74,10 +80,13 @@ class LanceStore:
             meta.get("filename", ""),
             meta.get("mime_type", ""),
             " ".join(meta.get("tags", [])),
+            meta.get("content_preview", ""),
         ]
         return " ".join(filter(None, parts))
 
     def embed(self, texts: list[str]) -> list[list[float]]:
+        if not texts:
+            return []
         embedder = self._get_embedder()
         batch = self.embed_batch_size
         out: list[list[float]] = []
@@ -86,12 +95,8 @@ class LanceStore:
             out.extend([emb.tolist() for emb in embedder.embed(chunk)])
         return out
 
-    def index(self, meta: dict) -> None:
-        if not self.embedder or not self.table:
-            raise RuntimeError("LanceStore not initialized")
-        text = self._build_search_text(meta)
-        vector = self.embed([text])[0]
-        row = {
+    def _meta_to_row(self, meta: dict, vector: list[float]) -> dict[str, Any]:
+        return {
             "id": meta["id"],
             "filename": meta["filename"],
             "storage_path": meta["storage_path"],
@@ -107,10 +112,42 @@ class LanceStore:
             "vector": vector,
             "content_preview": meta.get("content_preview", ""),
         }
-        self.table.add([row])
+
+    def index(self, meta: dict) -> None:
+        if not self.table:
+            raise RuntimeError("LanceStore not initialized")
+        text = self._build_search_text(meta)
+        vector = self.embed([text])[0]
+        self.table.add([self._meta_to_row(meta, vector)])
+
+    def index_many(
+        self,
+        metas: list[dict],
+        *,
+        progress_callback: Callable[[int, int], None] | None = None,
+    ) -> int:
+        """Embed and add many file rows in GPU-friendly batches."""
+        if not self.table:
+            raise RuntimeError("LanceStore not initialized")
+        if not metas:
+            return 0
+
+        texts = [self._build_search_text(m) for m in metas]
+        vectors = self.embed(texts)
+        rows = [self._meta_to_row(meta, vec) for meta, vec in zip(metas, vectors, strict=True)]
+
+        write_batch = max(self.embed_batch_size, 64)
+        total = len(rows)
+        for start in range(0, total, write_batch):
+            chunk = rows[start : start + write_batch]
+            self.table.add(chunk)
+            if progress_callback:
+                progress_callback(min(start + len(chunk), total), total)
+
+        return total
 
     def search(self, query: str, where: str | None = None, limit: int = 20) -> list[dict]:
-        if not self.embedder or not self.table:
+        if not self.table:
             raise RuntimeError("LanceStore not initialized")
         query_vec = self.embed([query])[0]
         sr = self.table.search(query_vec).limit(limit)
@@ -152,4 +189,9 @@ class LanceStore:
     def stats(self) -> dict:
         if not self.table:
             return {"exists": False, "row_count": 0}
-        return {"exists": True, "row_count": self.table.count_rows()}
+        return {
+            "exists": True,
+            "row_count": self.table.count_rows(),
+            "embed_device": self.embed_device,
+            "embed_batch_size": self.embed_batch_size,
+        }

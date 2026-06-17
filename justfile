@@ -91,6 +91,11 @@ ollama-models:
 
 # ── RAG (LanceDB vector index) ─────────────────────────────────────────────────
 
+# Re-embed all indexed depot files (CPU)
+rag:
+    @pwsh.exe -NoProfile -ExecutionPolicy Bypass -File scripts/just/rag.ps1
+
+# Re-embed all indexed depot files on GPU (after rag-gpu-install)
 rag-gpu:
     @pwsh.exe -NoProfile -ExecutionPolicy Bypass -File scripts/just/rag-gpu.ps1
 

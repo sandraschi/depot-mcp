@@ -27,6 +27,7 @@ class LanceStore:
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self.db: lancedb.DBConnection | None = None
         self.embedder: TextEmbedding | None = None
+        self.embed_batch_size: int = 64
         self.table: object | None = None
 
     async def initialize(self) -> None:
@@ -57,10 +58,15 @@ class LanceStore:
 
     def _get_embedder(self):
         if self.embedder is None:
-            from fastembed import TextEmbedding
+            from depot_mcp.rag.fastembed_gpu import create_text_embedding, repo_root_from_here
 
-            logger.info("Downloading embedding model %s (first run only)...", self.config.embedding_model)
-            self.embedder = TextEmbedding(model_name=self.config.embedding_model)
+            cache = str(self.db_path / "cache")
+            self.embedder, device, self.embed_batch_size = create_text_embedding(
+                self.config.embedding_model,
+                cache,
+                repo_root=repo_root_from_here(),
+            )
+            logger.info("Embed device: %s (batch %s)", device, self.embed_batch_size)
         return self.embedder
 
     def _build_search_text(self, meta: dict) -> str:
@@ -73,7 +79,12 @@ class LanceStore:
 
     def embed(self, texts: list[str]) -> list[list[float]]:
         embedder = self._get_embedder()
-        return [emb.tolist() for emb in embedder.embed(texts)]
+        batch = self.embed_batch_size
+        out: list[list[float]] = []
+        for start in range(0, len(texts), batch):
+            chunk = texts[start : start + batch]
+            out.extend([emb.tolist() for emb in embedder.embed(chunk)])
+        return out
 
     def index(self, meta: dict) -> None:
         if not self.embedder or not self.table:

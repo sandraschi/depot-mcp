@@ -1,4 +1,5 @@
-﻿set windows-shell := ["pwsh.exe", "-NoLogo", "-Command"]
+set windows-shell := ["pwsh.exe", "-NoLogo", "-Command"]
+import 'scripts/just/fleet.just'
 
 # Open the interactive recipe dashboard in the browser
 default:
@@ -88,10 +89,20 @@ ollama-models:
 
 # ── Maintenance ───────────────────────────────────────────────────────────────
 
+# ── RAG (LanceDB vector index) ─────────────────────────────────────────────────
+
+rag-gpu:
+    @pwsh.exe -NoProfile -ExecutionPolicy Bypass -File scripts/just/rag-gpu.ps1
+
+rag-gpu-install:
+    @pwsh.exe -NoProfile -ExecutionPolicy Bypass -File scripts/just/rag-gpu-install.ps1
+
+rag-cpu-install:
+    @pwsh.exe -NoProfile -ExecutionPolicy Bypass -File scripts/just/rag-cpu-install.ps1
+
 # Clean venv + node_modules
 clean:
     Set-Location '{{justfile_directory()}}'
     Remove-Item -Recurse -Force -LiteralPath '.venv' -ErrorAction SilentlyContinue
     Remove-Item -Recurse -Force -LiteralPath 'web_sota/frontend/node_modules' -ErrorAction SilentlyContinue
     Write-Host 'Cleaned .venv and node_modules'
-

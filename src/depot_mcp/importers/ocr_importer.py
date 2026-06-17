@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import sqlite3
+from contextlib import suppress
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -45,33 +47,30 @@ class OcrImporter(BaseImporter):
             conn = sqlite3.connect(str(db_path))
             conn.row_factory = sqlite3.Row
             cursor = conn.execute(
-                "SELECT id, title, source_path, ocr_text, tags, metadata "
-                "FROM documents ORDER BY id DESC LIMIT 500"
+                "SELECT id, title, source_path, ocr_text, tags, metadata FROM documents ORDER BY id DESC LIMIT 500"
             )
             for row in cursor:
-                import json
-
                 meta = {}
                 if row["metadata"]:
-                    try:
+                    with suppress(json.JSONDecodeError, TypeError):
                         meta = json.loads(row["metadata"])
-                    except (json.JSONDecodeError, TypeError):
-                        pass
                 tags = ["ocr"]
                 if row["tags"]:
                     tags.extend(t.split(",") if isinstance(t := row["tags"], str) else [])
 
                 text_content = (row["ocr_text"] or "")[:500]
-                docs.append({
-                    "path": str(db_path),
-                    "filename": row["title"] or f"ocr_{row['id']}.txt",
-                    "mime_type": "text/plain",
-                    "tags": tags,
-                    "ocr_id": row["id"],
-                    "source_path": row["source_path"] or "",
-                    "text_preview": text_content,
-                    "metadata": meta,
-                })
+                docs.append(
+                    {
+                        "path": str(db_path),
+                        "filename": row["title"] or f"ocr_{row['id']}.txt",
+                        "mime_type": "text/plain",
+                        "tags": tags,
+                        "ocr_id": row["id"],
+                        "source_path": row["source_path"] or "",
+                        "text_preview": text_content,
+                        "metadata": meta,
+                    }
+                )
             conn.close()
             logger.info("ocr-mcp corpus: imported %d documents", len(docs))
         except sqlite3.Error as e:

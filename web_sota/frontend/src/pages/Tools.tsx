@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
-import { Loader2, Wrench } from "lucide-react";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
+import { Loader2, Wrench } from "lucide-react";
+import { useEffect, useState } from "react";
 
 interface ToolInfo {
   portmanteau_tools: string[];
@@ -89,7 +89,9 @@ export default function Tools() {
             </CardHeader>
             <ul className="space-y-1">
               {inventory.prompt_names.map((p) => (
-                <li key={p} className="text-sm text-gray-300 font-mono">/prompt {p}</li>
+                <li key={p} className="text-sm text-gray-300 font-mono">
+                  /prompt {p}
+                </li>
               ))}
             </ul>
           </Card>

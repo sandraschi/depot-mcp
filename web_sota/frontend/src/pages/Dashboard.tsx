@@ -1,8 +1,8 @@
+import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
+import { AlertCircle, BarChart3, Cpu, Database, HardDrive, Loader2, Server, Wifi } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { HardDrive, Database, Server, Cpu, Wifi, BarChart3, Loader2, AlertCircle } from "lucide-react";
-import { Card, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 
 interface DepotStats {
   fast: { used_gb: number; free_gb: number; file_count: number };
@@ -27,8 +27,14 @@ export default function Dashboard() {
 
   useEffect(() => {
     Promise.allSettled([
-      fetch("/api/v1/depot/stats").then((r) => { if (!r.ok) throw new Error("Stats failed"); return r.json(); }),
-      fetch("/api/capabilities").then((r) => { if (!r.ok) throw new Error("Capabilities failed"); return r.json(); }),
+      fetch("/api/v1/depot/stats").then((r) => {
+        if (!r.ok) throw new Error("Stats failed");
+        return r.json();
+      }),
+      fetch("/api/capabilities").then((r) => {
+        if (!r.ok) throw new Error("Capabilities failed");
+        return r.json();
+      }),
     ]).then(([s, c]) => {
       if (s.status === "fulfilled") setStats(s.value);
       if (c.status === "fulfilled") setCaps(c.value);
@@ -78,11 +84,20 @@ export default function Dashboard() {
           </CardHeader>
           <div>
             <p className="text-3xl font-bold text-gray-100">{stats ? `${stats.fast.used_gb.toFixed(0)} GB` : "..."}</p>
-            <p className="text-xs text-gray-500 mt-1">{fastPct}% used · {stats?.fast.file_count ?? 0} files</p>
+            <p className="text-xs text-gray-500 mt-1">
+              {fastPct}% used · {stats?.fast.file_count ?? 0} files
+            </p>
             <div className="mt-2 h-2 bg-gray-800 rounded-full overflow-hidden">
-              <div className="h-full bg-depot-600 rounded-full transition-all duration-500" style={{ width: `${fastPct}%` }} />
+              <div
+                className="h-full bg-depot-600 rounded-full transition-all duration-500"
+                style={{ width: `${fastPct}%` }}
+              />
             </div>
-            <Link to="/stats"><Button variant="ghost" size="sm" className="mt-2 px-0 text-depot-400">View details</Button></Link>
+            <Link to="/stats">
+              <Button variant="ghost" size="sm" className="mt-2 px-0 text-depot-400">
+                View details
+              </Button>
+            </Link>
           </div>
         </Card>
 
@@ -93,11 +108,20 @@ export default function Dashboard() {
           </CardHeader>
           <div>
             <p className="text-3xl font-bold text-gray-100">{stats ? `${stats.slow.used_gb.toFixed(0)} GB` : "..."}</p>
-            <p className="text-xs text-gray-500 mt-1">{slowPct}% used · {stats?.slow.file_count ?? 0} files</p>
+            <p className="text-xs text-gray-500 mt-1">
+              {slowPct}% used · {stats?.slow.file_count ?? 0} files
+            </p>
             <div className="mt-2 h-2 bg-gray-800 rounded-full overflow-hidden">
-              <div className="h-full bg-amber-600 rounded-full transition-all duration-500" style={{ width: `${slowPct}%` }} />
+              <div
+                className="h-full bg-amber-600 rounded-full transition-all duration-500"
+                style={{ width: `${slowPct}%` }}
+              />
             </div>
-            <Link to="/stats"><Button variant="ghost" size="sm" className="mt-2 px-0 text-amber-400">View details</Button></Link>
+            <Link to="/stats">
+              <Button variant="ghost" size="sm" className="mt-2 px-0 text-amber-400">
+                View details
+              </Button>
+            </Link>
           </div>
         </Card>
 
@@ -108,7 +132,9 @@ export default function Dashboard() {
           </CardHeader>
           <div>
             <p className="text-3xl font-bold text-gray-100">{stats ? `${stats.index.lancedb_rows}` : "..."}</p>
-            <p className="text-xs text-gray-500 mt-1">LanceDB: {stats?.index.lancedb_rows ?? 0} · FTS5: {stats?.index.fts5_rows ?? 0}</p>
+            <p className="text-xs text-gray-500 mt-1">
+              LanceDB: {stats?.index.lancedb_rows ?? 0} · FTS5: {stats?.index.fts5_rows ?? 0}
+            </p>
             <p className="text-xs text-gray-600 mt-1">{caps?.inventory?.search_modes?.join(", ") ?? ""} search modes</p>
           </div>
         </Card>
@@ -121,7 +147,11 @@ export default function Dashboard() {
           <div>
             <p className="text-3xl font-bold text-gray-100">{stats?.total_files ?? "..."}</p>
             <p className="text-xs text-gray-500 mt-1">Across all storage tiers</p>
-            <Link to="/browse"><Button variant="ghost" size="sm" className="mt-2 px-0 text-blue-400">Browse files</Button></Link>
+            <Link to="/browse">
+              <Button variant="ghost" size="sm" className="mt-2 px-0 text-blue-400">
+                Browse files
+              </Button>
+            </Link>
           </div>
         </Card>
 
@@ -131,9 +161,17 @@ export default function Dashboard() {
             <Cpu className="h-4 w-4 text-purple-400" />
           </CardHeader>
           <div>
-            <p className="text-2xl font-bold text-gray-100 capitalize">{caps?.inventory?.tier_policies?.[0] ?? "..."}</p>
-            <p className="text-xs text-gray-500 mt-1">Available: {caps?.inventory?.tier_policies?.join(", ") ?? "..."}</p>
-            <Link to="/settings"><Button variant="ghost" size="sm" className="mt-2 px-0 text-purple-400">Configure</Button></Link>
+            <p className="text-2xl font-bold text-gray-100 capitalize">
+              {caps?.inventory?.tier_policies?.[0] ?? "..."}
+            </p>
+            <p className="text-xs text-gray-500 mt-1">
+              Available: {caps?.inventory?.tier_policies?.join(", ") ?? "..."}
+            </p>
+            <Link to="/settings">
+              <Button variant="ghost" size="sm" className="mt-2 px-0 text-purple-400">
+                Configure
+              </Button>
+            </Link>
           </div>
         </Card>
 
@@ -156,10 +194,18 @@ export default function Dashboard() {
           <CardTitle>Quick Actions</CardTitle>
         </CardHeader>
         <div className="flex flex-wrap gap-3">
-          <Link to="/upload"><Button>Upload Files</Button></Link>
-          <Link to="/search"><Button variant="outline">Search Depot</Button></Link>
-          <Link to="/import"><Button variant="outline">Import from Fleet</Button></Link>
-          <Link to="/chat"><Button variant="outline">AI Chat</Button></Link>
+          <Link to="/upload">
+            <Button>Upload Files</Button>
+          </Link>
+          <Link to="/search">
+            <Button variant="outline">Search Depot</Button>
+          </Link>
+          <Link to="/import">
+            <Button variant="outline">Import from Fleet</Button>
+          </Link>
+          <Link to="/chat">
+            <Button variant="outline">AI Chat</Button>
+          </Link>
         </div>
       </Card>
     </div>

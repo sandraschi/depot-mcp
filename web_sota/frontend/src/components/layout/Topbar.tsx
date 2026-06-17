@@ -1,5 +1,5 @@
+import { Cpu, Server, Wifi } from "lucide-react";
 import { useLocation } from "react-router-dom";
-import { Server, Wifi, Cpu } from "lucide-react";
 
 const TITLE_MAP: Record<string, string> = {
   "/": "Dashboard",
@@ -25,9 +25,15 @@ export default function Topbar() {
         <span className="text-xs text-gray-600 font-mono">{location.pathname}</span>
       </div>
       <div className="flex items-center gap-3 text-xs text-gray-500">
-        <span className="flex items-center gap-1"><Cpu size={12} /> 10727</span>
-        <span className="flex items-center gap-1"><Server size={12} /> v0.1.0</span>
-        <span className="flex items-center gap-1 text-green-500"><Wifi size={12} /> Online</span>
+        <span className="flex items-center gap-1">
+          <Cpu size={12} /> 10727
+        </span>
+        <span className="flex items-center gap-1">
+          <Server size={12} /> v0.1.0
+        </span>
+        <span className="flex items-center gap-1 text-green-500">
+          <Wifi size={12} /> Online
+        </span>
       </div>
     </header>
   );

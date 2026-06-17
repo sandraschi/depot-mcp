@@ -66,6 +66,12 @@ packages = ["src/depot_mcp"]
 [tool.ruff]
 line-length = 120
 target-version = "py312"
+exclude = [
+    ".venv",
+    "native",
+    "web_sota/frontend/node_modules",
+    "scripts/cua-smoke.py",
+]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W", "UP", "B", "C4", "SIM"]

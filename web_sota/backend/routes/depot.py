@@ -90,8 +90,10 @@ def create_router(server: DepoMCPServer):
             raise HTTPException(400, "filename required")
         file_id = server.file_store.generate_id()
         tag_list = [t.strip() for t in tags.split(",") if t.strip()]
-        resolved_tier = tier if tier not in ("auto", "") else server.tier_manager.classify(
-            file.filename, file.content_type or "", tag_list
+        resolved_tier = (
+            tier
+            if tier not in ("auto", "")
+            else server.tier_manager.classify(file.filename, file.content_type or "", tag_list)
         )
         path = await server.file_store.save_file_stream(file_id, resolved_tier, file.filename, file.file)
         meta = await server.file_store.file_indexer.index_file(
@@ -102,7 +104,13 @@ def create_router(server: DepoMCPServer):
             tags=tag_list,
             source="upload",
         )
-        return {"success": True, "file_id": file_id, "filename": file.filename, "tier": resolved_tier, "size_bytes": meta["size_bytes"]}
+        return {
+            "success": True,
+            "file_id": file_id,
+            "filename": file.filename,
+            "tier": resolved_tier,
+            "size_bytes": meta["size_bytes"],
+        }
 
     @router.get("/depot/download/{file_id}")
     async def download(file_id: str):
@@ -112,7 +120,9 @@ def create_router(server: DepoMCPServer):
         path = Path(found["storage_path"])
         if not path.exists():
             raise HTTPException(404, "File missing from disk")
-        server.lance_store.update_meta(file_id, {"access_count": found.get("access_count", 0) + 1, "last_accessed": time.time()})
+        server.lance_store.update_meta(
+            file_id, {"access_count": found.get("access_count", 0) + 1, "last_accessed": time.time()}
+        )
         return StreamingResponse(
             BytesIO(path.read_bytes()),
             media_type=found.get("mime_type", "application/octet-stream"),
@@ -150,8 +160,16 @@ def create_router(server: DepoMCPServer):
         lance = server.lance_store.stats()
         fts = server.fts_store.stats()
         return {
-            "fast": {"used_gb": round(fast["used_bytes"] / 1e9, 2), "free_gb": round(fast["free_bytes"] / 1e9, 2), "file_count": fast["file_count"]},
-            "slow": {"used_gb": round(slow["used_bytes"] / 1e9, 2), "free_gb": round(slow["free_bytes"] / 1e9, 2), "file_count": slow["file_count"]},
+            "fast": {
+                "used_gb": round(fast["used_bytes"] / 1e9, 2),
+                "free_gb": round(fast["free_bytes"] / 1e9, 2),
+                "file_count": fast["file_count"],
+            },
+            "slow": {
+                "used_gb": round(slow["used_bytes"] / 1e9, 2),
+                "free_gb": round(slow["free_bytes"] / 1e9, 2),
+                "file_count": slow["file_count"],
+            },
             "total_files": fast["file_count"] + slow["file_count"],
             "index": {"lancedb_rows": lance.get("row_count", 0), "fts5_rows": fts.get("row_count", 0)},
         }

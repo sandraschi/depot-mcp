@@ -24,10 +24,12 @@ class ArxivImporter(BaseImporter):
             return []
         files = []
         for md_file in self.source_path.rglob("*.md"):
-            files.append({
-                "path": str(md_file),
-                "filename": md_file.name,
-                "mime_type": "text/markdown",
-                "tags": ["paper", "arxiv"],
-            })
+            files.append(
+                {
+                    "path": str(md_file),
+                    "filename": md_file.name,
+                    "mime_type": "text/markdown",
+                    "tags": ["paper", "arxiv"],
+                }
+            )
         return files

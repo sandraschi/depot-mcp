@@ -73,14 +73,16 @@ class FTSStore:
         max_rank = max((r[5] for r in rows), default=1)
         for row in rows:
             score = 1.0 - (row[5] / (max_rank * 2.0))
-            results.append({
-                "file_id": row[0],
-                "filename": row[1],
-                "mime_type": row[2],
-                "tags": row[3].split(),
-                "content_preview": row[4],
-                "score": max(0.0, min(1.0, score)),
-            })
+            results.append(
+                {
+                    "file_id": row[0],
+                    "filename": row[1],
+                    "mime_type": row[2],
+                    "tags": row[3].split(),
+                    "content_preview": row[4],
+                    "score": max(0.0, min(1.0, score)),
+                }
+            )
         return results
 
     def update(self, file_id: str, meta: dict) -> None:

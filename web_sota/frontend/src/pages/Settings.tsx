@@ -1,14 +1,20 @@
-import { useEffect, useState } from "react";
-import { Loader2, AlertCircle } from "lucide-react";
-import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
+import { AlertCircle, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
 
 interface CapsResponse {
   status: string;
   server: { name: string; version: string; fastmcp: string };
   tool_surface: { total: number; portmanteau_count: number; atomic_count: number; portmanteau_tools: string[] };
   features: { sampling: boolean; agentic_workflows: boolean; prompts: boolean; skills: boolean; codemode: boolean };
-  inventory: { prompt_names: string[]; skill_uris: string[]; search_modes: string[]; tier_policies: string[]; importers: string[] };
+  inventory: {
+    prompt_names: string[];
+    skill_uris: string[];
+    search_modes: string[];
+    tier_policies: string[];
+    importers: string[];
+  };
   runtime: { transport: string; surface_mode: string; mcp_endpoint: string };
   llm: { providers: string[]; auto_glom: boolean };
   timestamp: string;
@@ -21,9 +27,18 @@ export default function Settings() {
 
   useEffect(() => {
     fetch("/api/capabilities")
-      .then((r) => { if (!r.ok) throw new Error("Failed to fetch"); return r.json(); })
-      .then((d) => { setCaps(d); setLoading(false); })
-      .catch((e) => { setError(e.message); setLoading(false); });
+      .then((r) => {
+        if (!r.ok) throw new Error("Failed to fetch");
+        return r.json();
+      })
+      .then((d) => {
+        setCaps(d);
+        setLoading(false);
+      })
+      .catch((e) => {
+        setError(e.message);
+        setLoading(false);
+      });
   }, []);
 
   if (loading) {
@@ -43,7 +58,9 @@ export default function Settings() {
           <p className="font-medium">Error</p>
           <p className="text-sm text-red-500">{error}</p>
         </div>
-        <Button variant="outline" size="sm" onClick={() => window.location.reload()} className="ml-auto">Retry</Button>
+        <Button variant="outline" size="sm" onClick={() => window.location.reload()} className="ml-auto">
+          Retry
+        </Button>
       </div>
     );
   }
@@ -74,7 +91,10 @@ export default function Settings() {
           </CardHeader>
           <dl className="space-y-2 text-sm">
             <Row label="Total Tools" value={String(caps.tool_surface.total)} />
-            <Row label="Portmanteau" value={`${caps.tool_surface.portmanteau_count} (${caps.tool_surface.portmanteau_tools.join(", ")})`} />
+            <Row
+              label="Portmanteau"
+              value={`${caps.tool_surface.portmanteau_count} (${caps.tool_surface.portmanteau_tools.join(", ")})`}
+            />
           </dl>
         </Card>
 
@@ -85,8 +105,14 @@ export default function Settings() {
           <dl className="space-y-2 text-sm">
             <Row label="Sampling" value={caps.features.sampling ? "Enabled" : "Disabled"} />
             <Row label="Agentic Workflows" value={caps.features.agentic_workflows ? "Enabled" : "Disabled"} />
-            <Row label="Prompts" value={caps.features.prompts ? `${caps.inventory.prompt_names.length} registered` : "None"} />
-            <Row label="Skills" value={caps.features.skills ? `${caps.inventory.skill_uris.length} registered` : "None"} />
+            <Row
+              label="Prompts"
+              value={caps.features.prompts ? `${caps.inventory.prompt_names.length} registered` : "None"}
+            />
+            <Row
+              label="Skills"
+              value={caps.features.skills ? `${caps.inventory.skill_uris.length} registered` : "None"}
+            />
             <Row label="CodeMode" value={caps.features.codemode ? "Available" : "Not available"} />
           </dl>
         </Card>

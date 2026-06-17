@@ -31,10 +31,12 @@ class GenericImporter(BaseImporter):
         for f in self.source_path.rglob("*"):
             if f.is_file():
                 mime, _ = mimetypes.guess_type(f.name)
-                files.append({
-                    "path": str(f),
-                    "filename": f.name,
-                    "mime_type": mime or "application/octet-stream",
-                    "tags": [self._label],
-                })
+                files.append(
+                    {
+                        "path": str(f),
+                        "filename": f.name,
+                        "mime_type": mime or "application/octet-stream",
+                        "tags": [self._label],
+                    }
+                )
         return files

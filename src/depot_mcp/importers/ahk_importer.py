@@ -27,10 +27,12 @@ class AHKImporter(BaseImporter):
         if not scriptlets_dir.exists():
             return []
         for ahk_file in scriptlets_dir.rglob("*.ahk"):
-            files.append({
-                "path": str(ahk_file),
-                "filename": ahk_file.name,
-                "mime_type": "text/x-autohotkey",
-                "tags": ["scriptlet", "autohotkey"],
-            })
+            files.append(
+                {
+                    "path": str(ahk_file),
+                    "filename": ahk_file.name,
+                    "mime_type": "text/x-autohotkey",
+                    "tags": ["scriptlet", "autohotkey"],
+                }
+            )
         return files

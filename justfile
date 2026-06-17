@@ -7,10 +7,19 @@ default:
 
 # ── Quality ───────────────────────────────────────────────────────────────────
 
-# Ruff linting
+# Ruff lint + format check
 lint:
     Set-Location '{{justfile_directory()}}'
     uv run ruff check .
+    uv run ruff format --check .
+
+# Ruff + Biome
+lint-all:
+    Set-Location '{{justfile_directory()}}'
+    uv run ruff check .
+    uv run ruff format --check .
+    Set-Location '{{justfile_directory()}}/web_sota/frontend'
+    npm run lint
 
 # Ruff fix + format
 fix:

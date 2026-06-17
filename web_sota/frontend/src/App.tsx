@@ -1,16 +1,16 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 import Layout from "./components/layout/Layout";
-import Dashboard from "./pages/Dashboard";
 import Browse from "./pages/Browse";
-import Search from "./pages/Search";
-import Upload from "./pages/Upload";
-import Stats from "./pages/Stats";
 import Chat from "./pages/Chat";
-import Help from "./pages/Help";
-import Tools from "./pages/Tools";
+import Dashboard from "./pages/Dashboard";
 import FileDetail from "./pages/FileDetail";
+import Help from "./pages/Help";
 import ImportPage from "./pages/ImportPage";
+import Search from "./pages/Search";
 import Settings from "./pages/Settings";
+import Stats from "./pages/Stats";
+import Tools from "./pages/Tools";
+import Upload from "./pages/Upload";
 
 export default function App() {
   return (

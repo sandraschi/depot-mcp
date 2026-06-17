@@ -36,10 +36,12 @@ class QCADImporter(BaseImporter):
                     except Exception:
                         pass
                 mime_type = "image/vnd.dxf" if cad_file.suffix.lower() == ".dxf" else "application/x-dwg"
-                files.append({
-                    "path": str(cad_file),
-                    "filename": cad_file.name,
-                    "mime_type": mime_type,
-                    "tags": tags,
-                })
+                files.append(
+                    {
+                        "path": str(cad_file),
+                        "filename": cad_file.name,
+                        "mime_type": mime_type,
+                        "tags": tags,
+                    }
+                )
         return files

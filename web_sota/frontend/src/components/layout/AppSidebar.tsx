@@ -1,19 +1,19 @@
-import { NavLink } from "react-router-dom";
 import {
-  LayoutDashboard,
-  FolderOpen,
-  Search,
-  Upload,
   BarChart3,
-  MessageSquare,
-  HelpCircle,
-  PackageOpen,
-  Settings,
+  FolderOpen,
   HardDrive,
+  HelpCircle,
+  LayoutDashboard,
+  MessageSquare,
+  PackageOpen,
   PanelRightClose,
   PanelRightOpen,
+  Search,
+  Settings,
+  Upload,
   Wrench,
 } from "lucide-react";
+import { NavLink } from "react-router-dom";
 
 interface Props {
   collapsed: boolean;
@@ -52,9 +52,7 @@ export default function AppSidebar({ collapsed, onToggle }: Props) {
           end={to === "/"}
           className={({ isActive }) =>
             `flex items-center gap-3 mx-2 px-3 py-2 rounded-lg transition-all duration-200 ${
-              isActive
-                ? "bg-depot-600/20 text-depot-400"
-                : "text-gray-500 hover:text-gray-300 hover:bg-gray-800/60"
+              isActive ? "bg-depot-600/20 text-depot-400" : "text-gray-500 hover:text-gray-300 hover:bg-gray-800/60"
             } ${collapsed ? "justify-center mx-1" : ""}`
           }
           title={label}

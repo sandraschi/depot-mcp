@@ -46,16 +46,18 @@ class SearchService:
             return []
         result = []
         for r in rows:
-            result.append({
-                "file_id": r["id"],
-                "filename": r.get("filename", ""),
-                "mime_type": r.get("mime_type", ""),
-                "size_bytes": r.get("size_bytes", 0),
-                "tier": r.get("tier", ""),
-                "tags": r.get("tags", []),
-                "score": r.get("score", 0.0),
-                "source": "vector",
-            })
+            result.append(
+                {
+                    "file_id": r["id"],
+                    "filename": r.get("filename", ""),
+                    "mime_type": r.get("mime_type", ""),
+                    "size_bytes": r.get("size_bytes", 0),
+                    "tier": r.get("tier", ""),
+                    "tags": r.get("tags", []),
+                    "score": r.get("score", 0.0),
+                    "source": "vector",
+                }
+            )
         return result
 
     def _fts_search(self, query: str, limit: int) -> list[dict]:

@@ -34,7 +34,9 @@ class TierManager:
     def get_policy(self, name: str) -> TierPolicy | None:
         return self._policies.get(name)
 
-    def classify(self, filename: str, mime_type: str, tags: list[str] | None = None, override_policy: str | None = None) -> str:
+    def classify(
+        self, filename: str, mime_type: str, tags: list[str] | None = None, override_policy: str | None = None
+    ) -> str:
         policy = self._policies.get(override_policy, self.active_policy) if override_policy else self.active_policy
         return policy.classify(filename, mime_type, tags)
 
@@ -42,7 +44,13 @@ class TierManager:
         new_path = await self.file_store.move_between_tiers(file_id, from_tier, to_tier, filename)
         if new_path is None:
             return {"success": False, "error": f"Migration failed for {file_id}"}
-        return {"success": True, "file_id": file_id, "from_tier": from_tier, "to_tier": to_tier, "new_path": str(new_path)}
+        return {
+            "success": True,
+            "file_id": file_id,
+            "from_tier": from_tier,
+            "to_tier": to_tier,
+            "new_path": str(new_path),
+        }
 
     async def run_lru_eviction(self, file_metas: list[dict]) -> list[dict]:
         """Background job: scan all files, migrate cold ones to slow tier."""
@@ -52,9 +60,7 @@ class TierManager:
             if policy.should_migrate(meta):
                 target = policy.target_tier(meta)
                 if target != meta.get("tier"):
-                    result = await self.migrate(
-                        meta["id"], meta["tier"], target, meta["filename"]
-                    )
+                    result = await self.migrate(meta["id"], meta["tier"], target, meta["filename"])
                     results.append(result)
                     meta["tier"] = target
                     meta["last_accessed"] = time.time()

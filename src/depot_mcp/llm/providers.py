@@ -26,12 +26,10 @@ class LLMProvider(ABC):
         self._client = httpx.AsyncClient(timeout=httpx.Timeout(60.0))
 
     @abstractmethod
-    async def list_models(self) -> list[dict[str, Any]]:
-        ...
+    async def list_models(self) -> list[dict[str, Any]]: ...
 
     @abstractmethod
-    async def chat(self, messages: list[dict], stream: bool = False, model_name: str | None = None) -> dict | str:
-        ...
+    async def chat(self, messages: list[dict], stream: bool = False, model_name: str | None = None) -> dict | str: ...
 
     async def close(self) -> None:
         await self._client.aclose()
@@ -51,12 +49,14 @@ class OllamaProvider(LLMProvider):
             data = resp.json()
             models = []
             for model in data.get("models", []):
-                models.append({
-                    "name": model.get("name", ""),
-                    "provider": "ollama",
-                    "size": model.get("size", 0),
-                    "modified": model.get("modified_at", ""),
-                })
+                models.append(
+                    {
+                        "name": model.get("name", ""),
+                        "provider": "ollama",
+                        "size": model.get("size", 0),
+                        "modified": model.get("modified_at", ""),
+                    }
+                )
             return models
         except Exception as e:
             logger.warning("Ollama list_models failed: %s", e)

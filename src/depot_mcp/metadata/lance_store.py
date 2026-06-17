@@ -38,22 +38,24 @@ class LanceStore:
 
         from depot_mcp.rag.fastembed_gpu import embed_use_gpu, repo_root_from_here
 
-        schema = pa.schema([
-            pa.field("id", pa.string()),
-            pa.field("filename", pa.string()),
-            pa.field("storage_path", pa.string()),
-            pa.field("mime_type", pa.string()),
-            pa.field("size_bytes", pa.int64()),
-            pa.field("tier", pa.string()),
-            pa.field("tags", pa.list_(pa.string())),
-            pa.field("source", pa.string()),
-            pa.field("checksum_sha256", pa.string()),
-            pa.field("access_count", pa.int64()),
-            pa.field("last_accessed", pa.float64()),
-            pa.field("created_at", pa.float64()),
-            pa.field("vector", pa.list_(pa.float32())),
-            pa.field("content_preview", pa.string()),
-        ])
+        schema = pa.schema(
+            [
+                pa.field("id", pa.string()),
+                pa.field("filename", pa.string()),
+                pa.field("storage_path", pa.string()),
+                pa.field("mime_type", pa.string()),
+                pa.field("size_bytes", pa.int64()),
+                pa.field("tier", pa.string()),
+                pa.field("tags", pa.list_(pa.string())),
+                pa.field("source", pa.string()),
+                pa.field("checksum_sha256", pa.string()),
+                pa.field("access_count", pa.int64()),
+                pa.field("last_accessed", pa.float64()),
+                pa.field("created_at", pa.float64()),
+                pa.field("vector", pa.list_(pa.float32())),
+                pa.field("content_preview", pa.string()),
+            ]
+        )
         self.db = lancedb.connect(str(self.db_path))
         try:
             self.table = self.db.open_table(TABLE_NAME)

@@ -20,12 +20,16 @@ def search_files() -> Message:
 
 def storage_report() -> Message:
     """Generate a storage usage report with tier breakdown."""
-    return Message("Generate a storage report for the depot. Show fast vs slow tier usage, file type distribution, and migration recommendations.")
+    return Message(
+        "Generate a storage report for the depot. Show fast vs slow tier usage, file type distribution, and migration recommendations."
+    )
 
 
 def migrate_help() -> Message:
     """Help migrating files between storage tiers."""
-    return Message("I need help managing storage tiers. Show me which files are candidates for migration between fast (NVMe) and slow (HDD) tiers.")
+    return Message(
+        "I need help managing storage tiers. Show me which files are candidates for migration between fast (NVMe) and slow (HDD) tiers."
+    )
 
 
 def register_prompts(mcp: FastMCP) -> None:

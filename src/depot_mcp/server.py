@@ -30,6 +30,7 @@ def _register_fastmcp_32_parity(mcp: FastMCP, config: DepoConfig) -> None:
     """Register FastMCP 3.2 features: native prompts, skills provider, agentic workflows."""
     try:
         from depot_mcp.prompts import register_prompts
+
         register_prompts(mcp)
         logger.info("FastMCP 3.2 native prompts registered")
     except Exception as e:
@@ -37,6 +38,7 @@ def _register_fastmcp_32_parity(mcp: FastMCP, config: DepoConfig) -> None:
 
     try:
         from fastmcp.server.providers.skills import SkillsDirectoryProvider
+
         roots = []
         repo_root = Path(__file__).resolve().parent
         for rel in ("skills",):
@@ -70,6 +72,7 @@ def _enable_agentic_mode(mcp: FastMCP, config: DepoConfig) -> None:
     """Enable CodeMode BM25 discovery and sampling for agentic workflows."""
     try:
         from fastmcp.experimental.transforms import CodeMode
+
         mcp.add_provider(CodeMode())
         logger.info("CodeMode agentic transforms enabled")
     except Exception as e:
@@ -144,6 +147,7 @@ class DepoMCPServer:
     async def run_http(self, host: str = "127.0.0.1", port: int = 10727) -> None:
         await self.initialize()
         import uvicorn
+
         self._mount_routes()
         config = uvicorn.Config(self.app, host=host, port=port, log_level="info")
         server = uvicorn.Server(config)

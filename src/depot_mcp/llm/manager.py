@@ -81,7 +81,9 @@ class LLMManager:
             all_models.extend(models)
         return all_models
 
-    async def chat(self, messages: list[dict], provider: str | None = None, stream: bool = False, model: str | None = None) -> dict | str:
+    async def chat(
+        self, messages: list[dict], provider: str | None = None, stream: bool = False, model: str | None = None
+    ) -> dict | str:
         await self.glom_local_providers_if_up()
         if provider:
             pt = ProviderType(provider)

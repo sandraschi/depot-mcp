@@ -36,7 +36,9 @@ def register_depot_tool(mcp: FastMCP, server: Any = None) -> None:
         tags: Annotated[list[str] | None, Field(description="Tags to apply or filter by.")] = None,
         mime_type: Annotated[str | None, Field(description="Filter by MIME type.")] = None,
         limit: Annotated[int, Field(description="Max results.", ge=1, le=100)] = 20,
-        search_mode: Annotated[Literal["hybrid", "semantic", "keyword"] | None, Field(description="Search mode.")] = "hybrid",
+        search_mode: Annotated[
+            Literal["hybrid", "semantic", "keyword"] | None, Field(description="Search mode.")
+        ] = "hybrid",
         ctx: Context = None,
     ) -> dict:
         """Centralized fleet depot. Upload, search, download, and manage files across fast (NVMe) and slow (spinner) tiers.
@@ -76,7 +78,9 @@ def register_depot_tool(mcp: FastMCP, server: Any = None) -> None:
             return {"success": False, "action": action, "data": {}, "error": str(e)}
 
 
-async def _handle_upload(server, filename: str | None, file_data_b64: str | None, tier: str | None, tags: list[str] | None) -> dict:
+async def _handle_upload(
+    server, filename: str | None, file_data_b64: str | None, tier: str | None, tags: list[str] | None
+) -> dict:
     if not filename or not file_data_b64:
         return {"success": False, "action": "upload", "data": {}, "error": "filename and file_data_b64 required"}
     file_id = server.file_store.generate_id()
@@ -91,7 +95,11 @@ async def _handle_upload(server, filename: str | None, file_data_b64: str | None
         tags=tags,
         source="upload",
     )
-    return {"success": True, "action": "upload", "data": {"file_id": file_id, "filename": filename, "tier": resolved_tier, "size_bytes": meta["size_bytes"]}}
+    return {
+        "success": True,
+        "action": "upload",
+        "data": {"file_id": file_id, "filename": filename, "tier": resolved_tier, "size_bytes": meta["size_bytes"]},
+    }
 
 
 async def _handle_download(server, file_id: str | None) -> dict:
@@ -105,11 +113,25 @@ async def _handle_download(server, file_id: str | None) -> dict:
     if not path.exists():
         return {"success": False, "action": "download", "data": {}, "error": "File missing from disk"}
     content = path.read_bytes()
-    server.lance_store.update_meta(file_id, {"access_count": found.get("access_count", 0) + 1, "last_accessed": time.time()})
-    return {"success": True, "action": "download", "data": {"file_id": file_id, "filename": found["filename"], "mime_type": found["mime_type"], "size_bytes": len(content), "content_b64": base64.b64encode(content).decode()}}
+    server.lance_store.update_meta(
+        file_id, {"access_count": found.get("access_count", 0) + 1, "last_accessed": time.time()}
+    )
+    return {
+        "success": True,
+        "action": "download",
+        "data": {
+            "file_id": file_id,
+            "filename": found["filename"],
+            "mime_type": found["mime_type"],
+            "size_bytes": len(content),
+            "content_b64": base64.b64encode(content).decode(),
+        },
+    }
 
 
-async def _handle_search(server, query: str | None, mime_type: str | None, tags: list[str] | None, limit: int, search_mode: str | None) -> dict:
+async def _handle_search(
+    server, query: str | None, mime_type: str | None, tags: list[str] | None, limit: int, search_mode: str | None
+) -> dict:
     if not query:
         return {"success": False, "action": "search", "data": {}, "error": "query required"}
     where_clauses = []
@@ -134,8 +156,16 @@ async def _handle_stats(server) -> dict:
         "success": True,
         "action": "stats",
         "data": {
-            "fast": {"used_gb": round(fast["used_bytes"] / 1e9, 2), "free_gb": round(fast["free_bytes"] / 1e9, 2), "file_count": fast["file_count"]},
-            "slow": {"used_gb": round(slow["used_bytes"] / 1e9, 2), "free_gb": round(slow["free_bytes"] / 1e9, 2), "file_count": slow["file_count"]},
+            "fast": {
+                "used_gb": round(fast["used_bytes"] / 1e9, 2),
+                "free_gb": round(fast["free_bytes"] / 1e9, 2),
+                "file_count": fast["file_count"],
+            },
+            "slow": {
+                "used_gb": round(slow["used_bytes"] / 1e9, 2),
+                "free_gb": round(slow["free_bytes"] / 1e9, 2),
+                "file_count": slow["file_count"],
+            },
             "index": {"lancedb_rows": lance.get("row_count", 0), "fts5_rows": fts.get("row_count", 0)},
             "drives": drives,
             "tier_policy": server.config.tier_policy,
@@ -151,7 +181,11 @@ async def _handle_migrate(server, file_id: str | None, tier: str | None) -> dict
     if not found:
         return {"success": False, "action": "migrate", "data": {}, "error": f"File not found: {file_id}"}
     if found["tier"] == tier:
-        return {"success": True, "action": "migrate", "data": {"message": "Already on target tier", "file_id": file_id, "tier": tier}}
+        return {
+            "success": True,
+            "action": "migrate",
+            "data": {"message": "Already on target tier", "file_id": file_id, "tier": tier},
+        }
     result = await server.tier_manager.migrate(file_id, found["tier"], tier, found["filename"])
     if result["success"]:
         server.lance_store.update_meta(file_id, {"tier": tier, "storage_path": result["new_path"]})

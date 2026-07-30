@@ -63,6 +63,7 @@ Any fleet server can access depot-mcp via HTTP:
 ```python
 import httpx
 
+
 async def upload_to_depot(file_path: str, tags: list[str] = None):
     async with httpx.AsyncClient() as client:
         with open(file_path, "rb") as f:
@@ -80,11 +81,14 @@ If your server has access to depot-mcp's MCP endpoint:
 
 ```python
 # Via FastMCP client
-result = await mcp_client.call_tool("depot_management", {
-    "action": "search",
-    "query": "recent papers",
-    "mime_type": "text/markdown",
-})
+result = await mcp_client.call_tool(
+    "depot_management",
+    {
+        "action": "search",
+        "query": "recent papers",
+        "mime_type": "text/markdown",
+    },
+)
 ```
 
 ### Option C: SMB Mount (Windows, Fast Tier Only)

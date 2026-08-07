@@ -1,11 +1,11 @@
-set windows-shell := ["pwsh.exe", "-NoLogo", "-Command"]
+set windows-shell := ["powershell.exe", "-NoProfile", "-Command"]
 import 'scripts/just/fleet.just'
 
 # Open the interactive recipe dashboard in the browser
 default:
     @just --list
 
-# ── Quality ───────────────────────────────────────────────────────────────────
+# --- Quality ---
 
 # Ruff lint + format check
 lint:
@@ -32,7 +32,7 @@ test:
     Set-Location '{{justfile_directory()}}'
     uv run pytest -v
 
-# ── Hardening ─────────────────────────────────────────────────────────────────
+# --- Hardening ---
 
 # Bandit security audit
 check-sec:
@@ -44,7 +44,7 @@ audit-deps:
     Set-Location '{{justfile_directory()}}'
     uv run safety check
 
-# ── Frontend ───────────────────────────────────────────────────────────────────
+# --- Frontend ---
 
 # Run Biome lint on frontend
 fe-lint:
@@ -56,7 +56,7 @@ fe-fix:
     Set-Location '{{justfile_directory()}}/web_sota/frontend'
     npx biome check --fix --unsafe
 
-# ── Development ───────────────────────────────────────────────────────────────
+# --- Development ---
 
 # Start the full stack (calls web_sota/start.ps1)
 run:
@@ -78,7 +78,7 @@ mcp-agentic:
     Set-Location '{{justfile_directory()}}'
     uv run depot-mcp --transport sse --port 10727 --agentic
 
-# ── Packaging ─────────────────────────────────────────────────────────────────
+# --- Packaging ---
 
 # Build MCPB package
 pack:
@@ -86,7 +86,7 @@ pack:
     if (Test-Path 'mcpb.json') { Write-Host 'MCPB config found' -ForegroundColor Green }
     Write-Host 'Run: mcpb pack . dist/depot-mcp.mcpb' -ForegroundColor Gray
 
-# ── LLM ───────────────────────────────────────────────────────────────────────
+# --- LLM ---
 
 # Check Ollama availability
 ollama-check:
@@ -96,23 +96,23 @@ ollama-check:
 ollama-models:
     try { $r = Invoke-WebRequest -Uri 'http://127.0.0.1:11434/api/tags' -TimeoutSec 5 -ErrorAction Stop; ($r.Content | ConvertFrom-Json).models | ForEach-Object { Write-Host "  $($_.name)" } } catch { Write-Host 'Ollama not reachable' -ForegroundColor Red }
 
-# ── Maintenance ───────────────────────────────────────────────────────────────
+# --- Maintenance ---
 
-# ── RAG (LanceDB vector index) ─────────────────────────────────────────────────
+# --- RAG  LanceDB vector index ---
 
 # Re-embed all indexed depot files (CPU)
 rag:
-    @pwsh.exe -NoProfile -ExecutionPolicy Bypass -File scripts/just/rag.ps1
+    @powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/just/rag.ps1
 
 # Re-embed all indexed depot files on GPU (after rag-gpu-install)
 rag-gpu:
-    @pwsh.exe -NoProfile -ExecutionPolicy Bypass -File scripts/just/rag-gpu.ps1
+    @powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/just/rag-gpu.ps1
 
 rag-gpu-install:
-    @pwsh.exe -NoProfile -ExecutionPolicy Bypass -File scripts/just/rag-gpu-install.ps1
+    @powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/just/rag-gpu-install.ps1
 
 rag-cpu-install:
-    @pwsh.exe -NoProfile -ExecutionPolicy Bypass -File scripts/just/rag-cpu-install.ps1
+    @powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/just/rag-cpu-install.ps1
 
 # Clean venv + node_modules
 clean:
@@ -120,3 +120,9 @@ clean:
     Remove-Item -Recurse -Force -LiteralPath '.venv' -ErrorAction SilentlyContinue
     Remove-Item -Recurse -Force -LiteralPath 'web_sota/frontend/node_modules' -ErrorAction SilentlyContinue
     Write-Host 'Cleaned .venv and node_modules'
+
+# Bootstrap: install dev deps + pre-commit hook
+bootstrap:
+    uv sync --group dev
+    uv run pre-commit install
+    Write-Host "Pre-commit hooks installed." -ForegroundColor Green

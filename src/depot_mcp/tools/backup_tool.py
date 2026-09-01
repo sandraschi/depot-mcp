@@ -33,14 +33,35 @@ CENTRAL_FAST = Path("D:/depot/fast")
 CENTRAL_SLOW = Path("E:/depot/slow")
 
 KNOWN_MAKER_REPOS = [
-    "blender-mcp", "gimp-mcp", "inkscape-mcp", "qcad-mcp", "freecad-mcp",
-    "librecad-mcp", "kicad-mcp", "openscad-mcp", "splatmaker-mcp", "worldlabs-mcp",
-    "depot-mcp", "calibre-mcp", "plex-mcp", "photoshop-mcp", "davinci-mcp",
+    "blender-mcp",
+    "gimp-mcp",
+    "inkscape-mcp",
+    "qcad-mcp",
+    "freecad-mcp",
+    "librecad-mcp",
+    "kicad-mcp",
+    "openscad-mcp",
+    "splatmaker-mcp",
+    "worldlabs-mcp",
+    "depot-mcp",
+    "calibre-mcp",
+    "plex-mcp",
+    "photoshop-mcp",
+    "davinci-mcp",
 ]
 
 
 def _resolve_depot(depot: str) -> tuple[Path, str]:
     """Resolve depot name to Path and human note. Raises ValueError if unknown."""
+    # First check advertised registry — active advertise/consume is source of truth
+    try:
+        from depot_mcp.fleet_registry import _load
+
+        adv = _load().get(depot.strip())
+        if adv and Path(adv["path"]).exists():
+            return Path(adv["path"]), adv.get("note", "advertised via fleet registry")
+    except Exception:
+        pass
     depot = depot.strip()
     if depot in ("memops-vault", "vault", "advanced-memory", "memops"):
         return VAULT_PATH, "vault is source — db/vectors are derivatives (re-embed after restore)"
@@ -66,22 +87,78 @@ def _resolve_depot(depot: str) -> tuple[Path, str]:
 
 
 def _list_available() -> list[dict]:
+    # Prefer advertised registry (active advertise/consume) — fallback to legacy scan
+    try:
+        from depot_mcp.fleet_registry import list_all_with_fallback
+
+        advertised = list_all_with_fallback()
+        if advertised:
+            # still need to enrich with live file counts
+            out: list[dict] = []
+            for entry in advertised:
+                p = Path(entry["path"])
+                if p.exists():
+                    files = sum(1 for _ in p.rglob("*") if _.is_file())
+                    mb = sum(f.stat().st_size for f in p.rglob("*") if f.is_file()) / (1024 * 1024)
+                    out.append({**entry, "files": files, "mb": round(mb, 1)})
+                else:
+                    out.append({**entry, "files": 0, "mb": 0, "error": "path not found"})
+            # also include vault if not advertised yet
+            if not any(e.get("depot") == "memops-vault" for e in advertised) and VAULT_PATH.exists():
+                files = sum(1 for _ in VAULT_PATH.rglob("*.md"))
+                mb = sum(f.stat().st_size for f in VAULT_PATH.rglob("*") if f.is_file()) / (1024 * 1024)
+                out.append(
+                    {
+                        "depot": "memops-vault",
+                        "path": str(VAULT_PATH),
+                        "files": files,
+                        "mb": round(mb, 1),
+                        "derivative": "memory.db + vectors/ rebuilt from vault",
+                    }
+                )
+            if out:
+                return out
+    except Exception:
+        pass
     out = []
-    # vault
+    # vault (fallback)
     if VAULT_PATH.exists():
         files = sum(1 for _ in VAULT_PATH.rglob("*.md"))
-        mb = sum(f.stat().st_size for f in VAULT_PATH.rglob("*") if f.is_file()) / (1024*1024)
-        out.append({"depot": "memops-vault", "path": str(VAULT_PATH), "files": files, "mb": round(mb, 1), "derivative": "memory.db + vectors/ rebuilt from vault"})
+        mb = sum(f.stat().st_size for f in VAULT_PATH.rglob("*") if f.is_file()) / (1024 * 1024)
+        out.append(
+            {
+                "depot": "memops-vault",
+                "path": str(VAULT_PATH),
+                "files": files,
+                "mb": round(mb, 1),
+                "derivative": "memory.db + vectors/ rebuilt from vault",
+            }
+        )
     # central
     for name, p in [("central-fast", CENTRAL_FAST), ("central-slow", CENTRAL_SLOW)]:
         if p.exists():
-            out.append({"depot": name, "path": str(p), "files": sum(1 for _ in p.rglob("*") if _.is_file()), "mb": round(sum(f.stat().st_size for f in p.rglob("*") if f.is_file())/1e6,1)})
+            out.append(
+                {
+                    "depot": name,
+                    "path": str(p),
+                    "files": sum(1 for _ in p.rglob("*") if _.is_file()),
+                    "mb": round(sum(f.stat().st_size for f in p.rglob("*") if f.is_file()) / 1e6, 1),
+                }
+            )
     # per-repo
     for repo in KNOWN_MAKER_REPOS:
         for sub in ("depot", "data", "storage"):
             d = FLEET_ROOT / repo / sub
             if d.exists() and d.is_dir():
-                out.append({"depot": repo, "sub": sub, "path": str(d), "files": sum(1 for _ in d.rglob("*") if _.is_file()), "mb": round(sum(f.stat().st_size for f in d.rglob("*") if f.is_file())/1e6,1)})
+                out.append(
+                    {
+                        "depot": repo,
+                        "sub": sub,
+                        "path": str(d),
+                        "files": sum(1 for _ in d.rglob("*") if _.is_file()),
+                        "mb": round(sum(f.stat().st_size for f in d.rglob("*") if f.is_file()) / 1e6, 1),
+                    }
+                )
                 break
     # also discover any other repo with depot/data dynamically
     for repo_dir in FLEET_ROOT.iterdir():
@@ -94,7 +171,15 @@ def _list_available() -> list[dict]:
             if d.exists() and d.is_dir():
                 # only include if non-trivial
                 if any(d.iterdir()):
-                    out.append({"depot": repo_dir.name, "sub": sub, "path": str(d), "files": sum(1 for _ in d.rglob("*") if _.is_file()), "mb": round(sum(f.stat().st_size for f in d.rglob("*") if f.is_file())/1e6,1)})
+                    out.append(
+                        {
+                            "depot": repo_dir.name,
+                            "sub": sub,
+                            "path": str(d),
+                            "files": sum(1 for _ in d.rglob("*") if _.is_file()),
+                            "mb": round(sum(f.stat().st_size for f in d.rglob("*") if f.is_file()) / 1e6, 1),
+                        }
+                    )
                 break
     return out
 
@@ -102,8 +187,18 @@ def _list_available() -> list[dict]:
 def register_backup_tool(mcp: FastMCP, server=None) -> None:
     @mcp.tool()
     async def depot_backup(
-        action: Annotated[Literal["list", "status", "backup", "restore"], Field(description="Backup operation: list available depots, status of one, backup to zip (base64), restore from zip.")],
-        depot: Annotated[str | None, Field(description="Depot name: memops-vault, central, or repo name like blender-mcp. Required for status/backup/restore.")] = None,
+        action: Annotated[
+            Literal["list", "status", "backup", "restore"],
+            Field(
+                description="Backup operation: list available depots, status of one, backup to zip (base64), restore from zip."
+            ),
+        ],
+        depot: Annotated[
+            str | None,
+            Field(
+                description="Depot name: memops-vault, central, or repo name like blender-mcp. Required for status/backup/restore."
+            ),
+        ] = None,
         file_data_b64: Annotated[str | None, Field(description="Base64 zip for restore (action=restore).")] = None,
         ctx: Context = None,
     ) -> dict:
@@ -130,10 +225,25 @@ def register_backup_tool(mcp: FastMCP, server=None) -> None:
                     return {"success": False, "action": "status", "data": {}, "error": "depot required"}
                 path, note = _resolve_depot(depot)
                 if not path.exists():
-                    return {"success": False, "action": "status", "data": {"depot": depot, "path": str(path)}, "error": "path not found"}
+                    return {
+                        "success": False,
+                        "action": "status",
+                        "data": {"depot": depot, "path": str(path)},
+                        "error": "path not found",
+                    }
                 files = sum(1 for _ in path.rglob("*") if _.is_file())
                 total = sum(f.stat().st_size for f in path.rglob("*") if f.is_file())
-                return {"success": True, "action": "status", "data": {"depot": depot, "path": str(path), "files": files, "mb": round(total/1e6,1), "note": note}}
+                return {
+                    "success": True,
+                    "action": "status",
+                    "data": {
+                        "depot": depot,
+                        "path": str(path),
+                        "files": files,
+                        "mb": round(total / 1e6, 1),
+                        "note": note,
+                    },
+                }
             if action == "backup":
                 if not depot:
                     return {"success": False, "action": "backup", "data": {}, "error": "depot required"}
@@ -152,10 +262,26 @@ def register_backup_tool(mcp: FastMCP, server=None) -> None:
                             zf.write(f, arc)
                 b64 = base64.b64encode(buf.getvalue()).decode()
                 filename = f"{depot}-backup-{time.strftime('%Y-%m-%d')}.zip"
-                return {"success": True, "action": "backup", "data": {"depot": depot, "path": str(path), "filename": filename, "zip_b64": b64, "bytes": len(buf.getvalue()), "note": note}}
+                return {
+                    "success": True,
+                    "action": "backup",
+                    "data": {
+                        "depot": depot,
+                        "path": str(path),
+                        "filename": filename,
+                        "zip_b64": b64,
+                        "bytes": len(buf.getvalue()),
+                        "note": note,
+                    },
+                }
             if action == "restore":
                 if not depot or not file_data_b64:
-                    return {"success": False, "action": "restore", "data": {}, "error": "depot and file_data_b64 required"}
+                    return {
+                        "success": False,
+                        "action": "restore",
+                        "data": {},
+                        "error": "depot and file_data_b64 required",
+                    }
                 path, note = _resolve_depot(depot)
                 data = base64.b64decode(file_data_b64)
                 if data[:2] != b"PK":
@@ -164,9 +290,11 @@ def register_backup_tool(mcp: FastMCP, server=None) -> None:
                 backup_dir = path.parent / f"{path.name}.bak-{ts}"
                 if path.exists():
                     import shutil
+
                     # copytree for dir, copy for file depot
                     if path.is_dir():
                         import shutil as _sh
+
                         _sh.copytree(path, backup_dir)
                     else:
                         path.rename(backup_dir)
@@ -178,6 +306,7 @@ def register_backup_tool(mcp: FastMCP, server=None) -> None:
                         # clear target
                         if path.exists():
                             import shutil
+
                             if path.is_dir():
                                 shutil.rmtree(path)
                             else:
@@ -188,11 +317,11 @@ def register_backup_tool(mcp: FastMCP, server=None) -> None:
                             # strip leading depot/vault prefix if present
                             for prefix in (f"{depot}/", "vault/", "depot/", "data/"):
                                 if name.startswith(prefix):
-                                    name = name[len(prefix):]
+                                    name = name[len(prefix) :]
                                     break
                             # also handle memops-vault zip which contains vault/... structure
                             if name.startswith("vault/"):
-                                name = name[len("vault/"):]
+                                name = name[len("vault/") :]
                             target = path / name
                             if member.is_dir():
                                 target.mkdir(parents=True, exist_ok=True)
@@ -200,10 +329,20 @@ def register_backup_tool(mcp: FastMCP, server=None) -> None:
                                 target.parent.mkdir(parents=True, exist_ok=True)
                                 with zf.open(member) as src, open(target, "wb") as dst:
                                     import shutil
+
                                     shutil.copyfileobj(src, dst)
                 except Exception as e:
                     return {"success": False, "action": "restore", "data": {"backup": str(backup_dir)}, "error": str(e)}
-                return {"success": True, "action": "restore", "data": {"depot": depot, "path": str(path), "backup": str(backup_dir), "note": note + " — db/vectors will re-embed on next sync if vault"}}
+                return {
+                    "success": True,
+                    "action": "restore",
+                    "data": {
+                        "depot": depot,
+                        "path": str(path),
+                        "backup": str(backup_dir),
+                        "note": note + " — db/vectors will re-embed on next sync if vault",
+                    },
+                }
             return {"success": False, "action": action, "data": {}, "error": f"unknown action {action}"}
         except Exception as e:
             return {"success": False, "action": action, "data": {}, "error": str(e)}

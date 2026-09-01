@@ -52,14 +52,13 @@ async def backup(depot: str):
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
         for f in path.rglob("*"):
             if f.is_file():
-                if depot in ("memops-vault", "vault"):
-                    arc = f.relative_to(path.parent)
-                else:
-                    arc = f.relative_to(path)
+                arc = f.relative_to(path.parent) if depot in ("memops-vault", "vault") else f.relative_to(path)  # noqa: SIM108
                 zf.write(f, arc)
     buf.seek(0)
     filename = f"{depot}-backup-{time.strftime('%Y-%m-%d')}.zip"
-    return StreamingResponse(buf, media_type="application/zip", headers={"Content-Disposition": f"attachment; filename={filename}"})
+    return StreamingResponse(
+        buf, media_type="application/zip", headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
 
 
 @router.post("/restore")

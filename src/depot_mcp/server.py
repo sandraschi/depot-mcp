@@ -180,11 +180,13 @@ class DepoMCPServer:
         from web_sota.backend.routes.backup import router as backup_router
         from web_sota.backend.routes.capabilities import router as capabilities_router
         from web_sota.backend.routes.depot import create_router
+        from web_sota.backend.routes.fleet import router as fleet_router
         from web_sota.backend.routes.llm import router as llm_router
 
         depot_router = create_router(self)
         self.app.include_router(depot_router, prefix="/api/v1")
         self.app.include_router(backup_router, prefix="/api/backup")
+        self.app.include_router(fleet_router, prefix="/api/fleet")
         self.app.include_router(capabilities_router, prefix="/api")
         self.app.include_router(llm_router, prefix="")
 

@@ -60,9 +60,11 @@ def register_mcp_surface(
     agentic: bool = False,
 ) -> None:
     """Register depot tools, prompts, and skills on any FastMCP instance."""
+    from depot_mcp.tools.backup_tool import register_backup_tool
     from depot_mcp.tools.depot_tool import register_depot_tool
 
     register_depot_tool(mcp, server=server)
+    register_backup_tool(mcp, server=server)
     _register_fastmcp_32_parity(mcp, config)
     if agentic:
         _enable_agentic_mode(mcp, config)
@@ -175,12 +177,14 @@ class DepoMCPServer:
         if str(repo_root) not in sys.path:
             sys.path.insert(0, str(repo_root))
 
+        from web_sota.backend.routes.backup import router as backup_router
         from web_sota.backend.routes.capabilities import router as capabilities_router
         from web_sota.backend.routes.depot import create_router
         from web_sota.backend.routes.llm import router as llm_router
 
         depot_router = create_router(self)
         self.app.include_router(depot_router, prefix="/api/v1")
+        self.app.include_router(backup_router, prefix="/api/backup")
         self.app.include_router(capabilities_router, prefix="/api")
         self.app.include_router(llm_router, prefix="")
 

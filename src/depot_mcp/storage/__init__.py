@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import logging
 import shutil
@@ -90,7 +91,7 @@ class FileStore:
         if not src.exists():
             return None
         dst = self.store_path(file_id, to_tier, filename)
-        shutil.copy2(src, dst)
+        await asyncio.to_thread(shutil.copy2, src, dst)
         if self.checksum(src) == self.checksum(dst):
             src.unlink()
             self._cleanup_empty_parents(src)

@@ -10,6 +10,7 @@ re-embed (adn_system sync). So vault backup zips only *.md, not the DB.
 
 from __future__ import annotations
 
+import asyncio
 import base64
 import io
 import time
@@ -308,7 +309,7 @@ def register_backup_tool(mcp: FastMCP, server=None) -> None:
                             import shutil
 
                             if path.is_dir():
-                                shutil.rmtree(path)
+                                await asyncio.to_thread(shutil.rmtree, path)
                             else:
                                 path.unlink()
                         path.mkdir(parents=True, exist_ok=True)

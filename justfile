@@ -15,11 +15,7 @@ lint:
 
 # Ruff + Biome
 lint-all:
-    Set-Location '{{justfile_directory()}}'
-    uv run ruff check .
-    uv run ruff format --check .
-    Set-Location '{{justfile_directory()}}/web_sota/frontend'
-    npm run lint
+    Set-Location '{{justfile_directory()}}'; uv run ruff check .; uv run ruff format --check .; Set-Location '{{justfile_directory()}}/web_sota/frontend'; npm run lint
 
 # Ruff fix + format
 fix:
@@ -48,13 +44,11 @@ audit-deps:
 
 # Run Biome lint on frontend
 fe-lint:
-    Set-Location '{{justfile_directory()}}/web_sota/frontend'
-    npx biome check
+    Set-Location '{{justfile_directory()}}/web_sota/frontend'; npx biome check
 
 # Run Biome fix on frontend
 fe-fix:
-    Set-Location '{{justfile_directory()}}/web_sota/frontend'
-    npx biome check --fix --unsafe
+    Set-Location '{{justfile_directory()}}/web_sota/frontend'; npx biome check --fix --unsafe
 
 # --- Development ---
 

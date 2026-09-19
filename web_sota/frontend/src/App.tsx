@@ -3,6 +3,7 @@ import Layout from "./components/layout/Layout";
 import Browse from "./pages/Browse";
 import Chat from "./pages/Chat";
 import Dashboard from "./pages/Dashboard";
+import Errors from "./pages/Errors";
 import FileDetail from "./pages/FileDetail";
 import Help from "./pages/Help";
 import ImportPage from "./pages/ImportPage";
@@ -28,6 +29,7 @@ export default function App() {
         <Route path="chat" element={<Chat />} />
         <Route path="help" element={<Help />} />
         <Route path="tools" element={<Tools />} />
+        <Route path="errors" element={<Errors />} />
         <Route path="skills" element={<Skills />} />
         <Route path="logs" element={<Logs />} />
         <Route path="file/:id" element={<FileDetail />} />

@@ -34,10 +34,10 @@ export default function Stats() {
   const COLORS = ["#1a6de8", "#1e293b"];
 
   return (
-    <div>
+    <div data-testid="stats-page">
       <h1 className="text-2xl font-bold text-gray-100 mb-6">Depot Statistics</h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" data-testid="stats-cards">
         <StatCard icon={HardDrive} label="Total Files" value={stats.total_files.toString()} />
         <StatCard
           icon={HardDrive}
@@ -69,7 +69,9 @@ export default function Stats() {
               </PieChart>
             </ResponsiveContainer>
           </div>
-          <p className="text-center text-gray-500 text-sm">{stats.fast.file_count} files</p>
+          <p className="text-center text-gray-400 text-sm" data-testid="stats-fast-chart">
+            {stats.fast.file_count} files
+          </p>
         </Card>
 
         <Card>
@@ -88,7 +90,9 @@ export default function Stats() {
               </PieChart>
             </ResponsiveContainer>
           </div>
-          <p className="text-center text-gray-500 text-sm">{stats.slow.file_count} files</p>
+          <p className="text-center text-gray-400 text-sm" data-testid="stats-slow-chart">
+            {stats.slow.file_count} files
+          </p>
         </Card>
       </div>
     </div>
@@ -100,7 +104,7 @@ function StatCard({ icon: Icon, label, value }: { icon: any; label: string; valu
     <Card className="flex items-center gap-3">
       <Icon size={24} className="text-depot-400" />
       <div>
-        <p className="text-gray-500 text-xs">{label}</p>
+        <p className="text-gray-400 text-sm">{label}</p>
         <p className="text-gray-200 font-mono text-lg">{value}</p>
       </div>
     </Card>

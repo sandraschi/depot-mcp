@@ -26,7 +26,7 @@ export default function Search() {
   }
 
   return (
-    <div>
+    <div data-testid="search-page">
       <h1 className="text-2xl font-bold text-gray-100 mb-6">Search Depot</h1>
 
       <div className="flex gap-2 mb-4">
@@ -34,6 +34,7 @@ export default function Search() {
           <SearchIcon size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
           <input
             type="text"
+            data-testid="search-input"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && doSearch()}
@@ -42,6 +43,7 @@ export default function Search() {
           />
         </div>
         <select
+          data-testid="search-mode"
           value={mode}
           onChange={(e) => setMode(e.target.value)}
           className="px-3 py-2.5 bg-gray-900 border border-gray-700 rounded-lg text-gray-300 text-sm focus:outline-none focus:border-depot-500"
@@ -50,14 +52,18 @@ export default function Search() {
           <option value="semantic">Semantic</option>
           <option value="keyword">Keyword</option>
         </select>
-        <Button onClick={doSearch} disabled={loading}>
+        <Button onClick={doSearch} disabled={loading} data-testid="search-submit">
           {loading ? "Searching..." : "Search"}
         </Button>
       </div>
 
-      {total > 0 && <p className="text-gray-500 text-sm mb-4">{total} results</p>}
+      {total > 0 && (
+        <p className="text-gray-400 text-sm mb-4" data-testid="search-count">
+          {total} results
+        </p>
+      )}
 
-      <div className="grid gap-3">
+      <div className="grid gap-3" data-testid="search-results">
         {results.map((r) => (
           <Link
             key={r.file_id}

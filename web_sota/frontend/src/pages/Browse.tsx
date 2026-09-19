@@ -29,19 +29,21 @@ export default function Browse() {
   }
 
   return (
-    <div>
+    <div data-testid="browse-page">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-100">Depot Browse</h1>
-        <span className="text-gray-500 text-sm">{files.length} files</span>
+        <span className="text-gray-400 text-sm" data-testid="browse-count">
+          {files.length} files
+        </span>
       </div>
 
       {files.length === 0 ? (
-        <Card className="text-center text-gray-500 py-12">
+        <Card className="text-center text-gray-400 py-12" data-testid="browse-empty">
           <p className="text-lg mb-2">Depot is empty</p>
           <p className="text-sm">Upload files to get started.</p>
         </Card>
       ) : (
-        <div className="grid gap-3">
+        <div className="grid gap-3" data-testid="browse-list">
           {files.map((f) => (
             <Link
               key={f.file_id}

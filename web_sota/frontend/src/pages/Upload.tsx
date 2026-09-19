@@ -37,21 +37,25 @@ export default function Upload() {
   }
 
   return (
-    <div>
+    <div data-testid="upload-page">
       <h1 className="text-2xl font-bold text-gray-100 mb-6">Upload Files</h1>
 
       <div className="grid gap-6 max-w-2xl">
         <Card>
           <CardHeader>
-            <CardTitle>Storage Options</CardTitle>
+            <CardTitle className="text-gray-100">Storage Options</CardTitle>
           </CardHeader>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-gray-400 text-sm block mb-1">Tier</label>
+              <label className="text-gray-300 text-sm block mb-1" htmlFor="upload-tier">
+                Tier
+              </label>
               <select
+                id="upload-tier"
+                data-testid="upload-tier"
                 value={tier}
                 onChange={(e) => setTier(e.target.value)}
-                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-gray-200 text-sm"
+                className="w-full px-3 py-2 bg-zinc-800 text-zinc-100 border border-gray-700 rounded-lg text-sm"
               >
                 <option value="auto">Auto (policy-based)</option>
                 <option value="fast">Fast (NVMe)</option>
@@ -59,19 +63,24 @@ export default function Upload() {
               </select>
             </div>
             <div>
-              <label className="text-gray-400 text-sm block mb-1">Tags (comma-separated)</label>
+              <label className="text-gray-300 text-sm block mb-1" htmlFor="upload-tags">
+                Tags (comma-separated)
+              </label>
               <input
+                id="upload-tags"
+                data-testid="upload-tags"
                 type="text"
                 value={tags}
                 onChange={(e) => setTags(e.target.value)}
                 placeholder="project-x, final, review"
-                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-gray-200 placeholder-gray-500 text-sm"
+                className="w-full px-3 py-2 bg-zinc-800 text-zinc-100 border border-gray-700 rounded-lg placeholder-gray-500 text-sm"
               />
             </div>
           </div>
         </Card>
 
         <div
+          data-testid="upload-dropzone"
           className={`relative border-2 border-dashed rounded-xl p-12 text-center transition-colors ${
             dragOver ? "border-depot-500 bg-depot-500/10" : "border-gray-700 bg-gray-900/30"
           }`}
@@ -102,7 +111,8 @@ export default function Upload() {
           <input
             ref={fileRef}
             type="file"
-            className="hidden"
+            data-testid="upload-input"
+            className="bg-zinc-800 text-zinc-100 border border-gray-700 rounded-lg px-3 py-2 text-sm sr-only"
             onChange={(e) => {
               const file = e.target.files?.[0];
               if (file) uploadFile(file);

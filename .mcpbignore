@@ -25,6 +25,7 @@ build/
 # Batch-edit backups
 *.bak
 *.bak.*
+*.bak-*
 
 # Non-MCP components (webapp, native, scripts)
 native/

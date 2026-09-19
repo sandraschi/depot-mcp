@@ -1,5 +1,16 @@
 # Changelog — depot-mcp
 
+## 2026-09-19 (night) — pages audit: every tool op now has a UI
+
+New: Fleet Errors explorer page (all query filters + stats), FileDetail
+tier-migrate buttons, Tools diagnostics card. Fixed three upload-chain bugs
+the audit's round-trip test caught: `UploadFile` imported inside the route
+factory (annotation never resolved - upload 500'd for every caller), sync
+`file.file.read()` awaited, `if not self.table` falsy on empty LanceDB
+tables, last-row delete crashing on schema-less rewrite, `/app` SPA mount
+so vite base + router basename resolve in production. e2e 4/4 live green.
+Untracked live sqlite wal/shm.
+
 ## 2026-09-19 (evening) — deferred backlog cleared
 
 Backend: `GET /api/status`, `/api/skills`, `/api/v1/logs` (ring buffer);

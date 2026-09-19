@@ -1,13 +1,16 @@
 import {
   BarChart3,
+  BookOpen,
   FolderOpen,
   HardDrive,
   HelpCircle,
+  Inbox,
   LayoutDashboard,
   MessageSquare,
   PackageOpen,
   PanelRightClose,
   PanelRightOpen,
+  ScrollText,
   Search,
   Settings,
   Upload,
@@ -18,22 +21,26 @@ import { NavLink } from "react-router-dom";
 interface Props {
   collapsed: boolean;
   onToggle: () => void;
+  zoomPercent?: number;
 }
 
 const navItems = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard" },
+  { to: "/inbox", icon: Inbox, label: "Inbox" },
   { to: "/browse", icon: FolderOpen, label: "Browse" },
   { to: "/search", icon: Search, label: "Search" },
   { to: "/upload", icon: Upload, label: "Upload" },
   { to: "/stats", icon: BarChart3, label: "Stats" },
   { to: "/chat", icon: MessageSquare, label: "Chat" },
   { to: "/tools", icon: Wrench, label: "Tools" },
+  { to: "/skills", icon: BookOpen, label: "Skills" },
+  { to: "/logs", icon: ScrollText, label: "Logs" },
   { to: "/help", icon: HelpCircle, label: "Help" },
   { to: "/import", icon: PackageOpen, label: "Import" },
   { to: "/settings", icon: Settings, label: "Settings" },
 ];
 
-export default function AppSidebar({ collapsed, onToggle }: Props) {
+export default function AppSidebar({ collapsed, onToggle, zoomPercent }: Props) {
   return (
     <aside
       className={`glass border-r flex flex-col py-3 gap-1 z-40 transition-all duration-200 ${
@@ -46,7 +53,7 @@ export default function AppSidebar({ collapsed, onToggle }: Props) {
         <button
           type="button"
           onClick={onToggle}
-          className="ml-auto p-1.5 rounded-lg text-gray-500 hover:text-gray-300 hover:bg-gray-800/60 transition-colors"
+          className="ml-auto p-1.5 rounded-lg text-gray-400 hover:text-gray-200 hover:bg-gray-800/60 transition-colors"
           title={collapsed ? "Expand" : "Collapse"}
         >
           {collapsed ? <PanelRightOpen size={16} /> : <PanelRightClose size={16} />}
@@ -58,17 +65,22 @@ export default function AppSidebar({ collapsed, onToggle }: Props) {
           key={to}
           to={to}
           end={to === "/"}
+          data-testid={`nav-${label.toLowerCase()}`}
           className={({ isActive }) =>
             `flex items-center gap-3 mx-2 px-3 py-2 rounded-lg transition-all duration-200 ${
-              isActive ? "bg-depot-600/20 text-depot-400" : "text-gray-500 hover:text-gray-300 hover:bg-gray-800/60"
+              isActive ? "bg-depot-600/20 text-depot-400" : "text-gray-400 hover:text-gray-200 hover:bg-gray-800/60"
             } ${collapsed ? "justify-center mx-1" : ""}`
           }
           title={label}
         >
           <Icon size={18} className="shrink-0" />
-          {!collapsed && <span className="text-xs font-medium truncate">{label}</span>}
+          {!collapsed && <span className="text-sm font-medium truncate">{label}</span>}
         </NavLink>
       ))}
+
+      {!collapsed && typeof zoomPercent === "number" && (
+        <div className="mt-auto px-3 pt-2 text-sm text-gray-500">Zoom {zoomPercent}% (Ctrl+Scroll)</div>
+      )}
     </aside>
   );
 }

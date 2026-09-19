@@ -19,9 +19,16 @@ interface CapsResponse {
   runtime: { mcp_endpoint: string };
 }
 
+interface OnboardingState {
+  configured: boolean;
+  checks: { llm?: { ollama: boolean; lm_studio: boolean } };
+  recommended_path: string[];
+}
+
 export default function Dashboard() {
   const [stats, setStats] = useState<DepotStats | null>(null);
   const [caps, setCaps] = useState<CapsResponse | null>(null);
+  const [onboarding, setOnboarding] = useState<OnboardingState | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -35,9 +42,11 @@ export default function Dashboard() {
         if (!r.ok) throw new Error("Capabilities failed");
         return r.json();
       }),
-    ]).then(([s, c]) => {
+      fetch("/api/llm/onboarding").then((r) => (r.ok ? r.json() : null)),
+    ]).then(([s, c, o]) => {
       if (s.status === "fulfilled") setStats(s.value);
       if (c.status === "fulfilled") setCaps(c.value);
+      if (o.status === "fulfilled" && o.value) setOnboarding(o.value);
       if (s.status === "rejected" && c.status === "rejected") {
         setError("Failed to connect to depot backend");
       }
@@ -47,16 +56,19 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="flex items-center justify-center h-64" data-testid="dashboard">
         <Loader2 size={32} className="animate-spin text-depot-400" />
-        <span className="ml-3 text-gray-500">Loading depot status...</span>
+        <span className="ml-3 text-gray-400">Loading depot status...</span>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex items-center gap-3 p-4 rounded-xl bg-red-900/20 border border-red-800/50 text-red-400">
+      <div
+        className="flex items-center gap-3 p-4 rounded-xl bg-red-900/20 border border-red-800/50 text-red-400"
+        data-testid="dashboard"
+      >
         <AlertCircle size={20} />
         <div>
           <p className="font-medium">Connection Error</p>
@@ -73,18 +85,58 @@ export default function Dashboard() {
   const totalSlowGb = stats ? stats.slow.used_gb + stats.slow.free_gb : 0;
   const fastPct = totalFastGb > 0 ? ((stats!.fast.used_gb / totalFastGb) * 100).toFixed(1) : "0";
   const slowPct = totalSlowGb > 0 ? ((stats!.slow.used_gb / totalSlowGb) * 100).toFixed(1) : "0";
+  const llmOk = onboarding?.checks?.llm ? onboarding.checks.llm.ollama || onboarding.checks.llm.lm_studio : null;
 
   return (
-    <div>
+    <div data-testid="dashboard">
+      {/* Hero: what this is, status, quick-start */}
+      <div className="mb-6 rounded-2xl border border-gray-800 bg-gradient-to-br from-gray-900 to-gray-950 p-6">
+        <h1 className="text-2xl font-bold text-gray-100">Fleet File Depot</h1>
+        <p className="mt-2 text-sm text-gray-300 max-w-2xl">
+          One permanent home for every MCP server&apos;s files: hot data on NVMe, cold data on HDD spinners, hybrid
+          vector + keyword search over everything. Upload, browse, migrate tiers, and import fleet depots.
+        </p>
+        <div className="mt-3 flex flex-wrap items-center gap-4 text-sm">
+          <span className="flex items-center gap-1.5 text-gray-300">
+            <span
+              className={`w-2 h-2 rounded-full ${stats ? "bg-green-500" : "bg-red-500"}`}
+              data-testid="backend-dot"
+            />
+            Backend {stats ? "connected" : "disconnected"}
+          </span>
+          <span className="flex items-center gap-1.5 text-gray-300">
+            <span
+              className={`w-2 h-2 rounded-full ${llmOk ? "bg-green-500" : llmOk === false ? "bg-gray-500" : "bg-yellow-500"}`}
+            />
+            LLM {llmOk ? "available" : llmOk === false ? "not detected" : "probing..."}
+          </span>
+          <span className="text-gray-400">FastMCP {caps?.server?.fastmcp ?? "..."}</span>
+        </div>
+        {onboarding && !onboarding.configured && (
+          <Link to="/settings" data-testid="onboarding-cue">
+            <Button className="mt-4 w-full bg-red-600 hover:bg-red-500 text-white font-semibold" size="lg">
+              Complete onboarding - connect tiers + local LLM
+            </Button>
+          </Link>
+        )}
+        {onboarding?.configured && llmOk === false && (
+          <Link to="/chat" data-testid="onboarding-cue">
+            <Button className="mt-4 w-full bg-red-600 hover:bg-red-500 text-white font-semibold" size="lg">
+              Complete onboarding - set up a local LLM (Ollama / LM Studio)
+            </Button>
+          </Link>
+        )}
+      </div>
+
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-slate-400">Fast Tier (NVMe)</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-300">Fast Tier (NVMe)</CardTitle>
             <HardDrive className="h-4 w-4 text-depot-400" />
           </CardHeader>
-          <div>
+          <div data-testid="kpi-fast-tier">
             <p className="text-3xl font-bold text-gray-100">{stats ? `${stats.fast.used_gb.toFixed(0)} GB` : "..."}</p>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-sm text-gray-400 mt-1">
               {fastPct}% used · {stats?.fast.file_count ?? 0} files
             </p>
             <div className="mt-2 h-2 bg-gray-800 rounded-full overflow-hidden">
@@ -103,12 +155,12 @@ export default function Dashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-slate-400">Slow Tier (HDD)</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-300">Slow Tier (HDD)</CardTitle>
             <Database className="h-4 w-4 text-amber-400" />
           </CardHeader>
-          <div>
+          <div data-testid="kpi-slow-tier">
             <p className="text-3xl font-bold text-gray-100">{stats ? `${stats.slow.used_gb.toFixed(0)} GB` : "..."}</p>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-sm text-gray-400 mt-1">
               {slowPct}% used · {stats?.slow.file_count ?? 0} files
             </p>
             <div className="mt-2 h-2 bg-gray-800 rounded-full overflow-hidden">
@@ -127,26 +179,26 @@ export default function Dashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-slate-400">Search Index</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-300">Search Index</CardTitle>
             <Database className="h-4 w-4 text-green-400" />
           </CardHeader>
-          <div>
+          <div data-testid="kpi-search-index">
             <p className="text-3xl font-bold text-gray-100">{stats ? `${stats.index.lancedb_rows}` : "..."}</p>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-sm text-gray-400 mt-1">
               LanceDB: {stats?.index.lancedb_rows ?? 0} · FTS5: {stats?.index.fts5_rows ?? 0}
             </p>
-            <p className="text-xs text-gray-600 mt-1">{caps?.inventory?.search_modes?.join(", ") ?? ""} search modes</p>
+            <p className="text-sm text-gray-500 mt-1">{caps?.inventory?.search_modes?.join(", ") ?? ""} search modes</p>
           </div>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-slate-400">Total Files</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-300">Total Files</CardTitle>
             <Server className="h-4 w-4 text-blue-400" />
           </CardHeader>
-          <div>
+          <div data-testid="kpi-total-files">
             <p className="text-3xl font-bold text-gray-100">{stats?.total_files ?? "..."}</p>
-            <p className="text-xs text-gray-500 mt-1">Across all storage tiers</p>
+            <p className="text-sm text-gray-400 mt-1">Across all storage tiers</p>
             <Link to="/browse">
               <Button variant="ghost" size="sm" className="mt-2 px-0 text-blue-400">
                 Browse files
@@ -157,14 +209,14 @@ export default function Dashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-slate-400">Tier Policy</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-300">Tier Policy</CardTitle>
             <Cpu className="h-4 w-4 text-purple-400" />
           </CardHeader>
-          <div>
+          <div data-testid="kpi-tier-policy">
             <p className="text-2xl font-bold text-gray-100 capitalize">
               {caps?.inventory?.tier_policies?.[0] ?? "..."}
             </p>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-sm text-gray-400 mt-1">
               Available: {caps?.inventory?.tier_policies?.join(", ") ?? "..."}
             </p>
             <Link to="/settings">
@@ -177,12 +229,12 @@ export default function Dashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-slate-400">FastMCP Status</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-300">FastMCP Status</CardTitle>
             <Wifi className="h-4 w-4 text-cyan-400" />
           </CardHeader>
-          <div>
-            <p className="text-lg font-mono text-gray-100 text-sm">{caps?.server?.fastmcp ?? "..."}</p>
-            <p className="text-xs text-gray-500 mt-1">
+          <div data-testid="kpi-fastmcp">
+            <p className="font-mono text-gray-100 text-sm">{caps?.server?.fastmcp ?? "..."}</p>
+            <p className="text-sm text-gray-400 mt-1">
               Sampling: {caps?.features?.sampling ? "Yes" : "No"} · Skills: {caps?.features?.skills ? "Yes" : "No"}
             </p>
           </div>
@@ -193,7 +245,7 @@ export default function Dashboard() {
         <CardHeader>
           <CardTitle>Quick Actions</CardTitle>
         </CardHeader>
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-3" data-testid="quick-actions">
           <Link to="/upload">
             <Button>Upload Files</Button>
           </Link>

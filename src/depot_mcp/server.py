@@ -15,6 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastmcp import FastMCP
 
 from depot_mcp.config import DepoConfig
+from depot_mcp.fleet_errors import FleetErrorStore
 from depot_mcp.llm.manager import get_llm_manager
 from depot_mcp.metadata.fts_store import FTSStore
 from depot_mcp.metadata.indexer import FileIndexer
@@ -62,9 +63,11 @@ def register_mcp_surface(
     """Register depot tools, prompts, and skills on any FastMCP instance."""
     from depot_mcp.tools.backup_tool import register_backup_tool
     from depot_mcp.tools.depot_tool import register_depot_tool
+    from depot_mcp.tools.fleet_errors_tool import register_fleet_errors_tool
 
     register_depot_tool(mcp, server=server)
     register_backup_tool(mcp, server=server)
+    register_fleet_errors_tool(mcp, server=server)
     _register_fastmcp_32_parity(mcp, config)
     if agentic:
         _enable_agentic_mode(mcp, config)
@@ -97,6 +100,7 @@ class DepoMCPServer:
         self.lance_store = LanceStore(self.config)
         self.fts_store = FTSStore(self.config)
         self.search_service = SearchService(self.config, self.lance_store, self.fts_store)
+        self.fleet_error_store = FleetErrorStore(self.config)
         self.file_indexer = FileIndexer(
             self.config, self.file_store, self.tier_manager, self.lance_store, self.fts_store
         )
@@ -120,6 +124,9 @@ class DepoMCPServer:
                 "https://tauri.localhost",
                 "tauri://localhost",
             ],
+            # Unconditional LAN/Tailscale/WebView regex — explicit origins above
+            # are the documented surfaces, this covers DHCP-renamed hosts.
+            allow_origin_regex=r"https?://(localhost|127\.0\.0\.1|goliath|100\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|tauri\.localhost)(:\d+)?",
             allow_credentials=True,
             allow_methods=["*"],
             allow_headers=["*"],
@@ -181,6 +188,7 @@ class DepoMCPServer:
         from web_sota.backend.routes.capabilities import router as capabilities_router
         from web_sota.backend.routes.depot import create_router
         from web_sota.backend.routes.fleet import router as fleet_router
+        from web_sota.backend.routes.fleet_errors import create_fleet_errors_router
         from web_sota.backend.routes.llm import router as llm_router
 
         depot_router = create_router(self)
@@ -189,9 +197,49 @@ class DepoMCPServer:
         self.app.include_router(fleet_router, prefix="/api/fleet")
         self.app.include_router(capabilities_router, prefix="/api")
         self.app.include_router(llm_router, prefix="")
+        self.app.include_router(create_fleet_errors_router(self), prefix="/api/v1")
 
         @self.app.get("/health")
         async def health() -> dict[str, str]:
             return {"status": "ok", "service": "depot-mcp"}
+
+        @self.app.post("/api/shutdown")
+        async def shutdown() -> dict[str, str]:
+            """Orderly exit for the fleet launcher: 200 now, process exits 500 ms later."""
+            import os
+            import threading
+
+            threading.Timer(0.5, lambda: os._exit(0)).start()
+            return {"status": "shutting down", "service": "depot-mcp"}
+
+        @self.app.get("/api/v1/diagnostics")
+        async def diagnostics() -> dict:
+            """Full diagnostics for CUA-NSIS smoke tests: tools, versions, storage."""
+            tool_names = ["depot_management", "depot_backup", "fleet_errors"]
+            try:
+                listed = await self.mcp.list_tools()
+                tool_names = sorted(t.name for t in listed)
+            except Exception:
+                logger.debug("dynamic tool listing unavailable, using static list")
+            try:
+                from importlib.metadata import version
+
+                fastmcp_ver = version("fastmcp")
+            except Exception:
+                fastmcp_ver = "unknown"
+            try:
+                fleet_stats = self.fleet_error_store.stats()
+            except Exception:
+                fleet_stats = {"total": 0}
+            return {
+                "status": "ok",
+                "service": "depot-mcp",
+                "version": "0.1.0",
+                "fastmcp": fastmcp_ver,
+                "tools": tool_names,
+                "ports": {"backend": self.config.port, "frontend": self.config.frontend_port},
+                "data_dir": str(self.config.data_dir),
+                "fleet_errors": fleet_stats,
+            }
 
         self._routes_mounted = True

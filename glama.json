@@ -8,7 +8,9 @@
   },
   "capabilities": {
     "tools": [
-      "depot_management"
+      "depot_management",
+      "depot_backup",
+      "fleet_errors"
     ]
   }
 }

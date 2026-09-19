@@ -5,3 +5,12 @@ repos:
       - id: ruff
         args: [--fix]
       - id: ruff-format
+  - repo: local
+    hooks:
+      - id: biome
+        name: biome (web_sota frontend)
+        entry: powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/pre-commit-biome.ps1
+        language: system
+        types: [file]
+        files: ^web_sota/frontend/src/.*\.(ts|tsx|js|jsx|json)$
+        pass_filenames: false

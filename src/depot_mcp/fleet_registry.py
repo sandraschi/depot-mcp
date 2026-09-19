@@ -32,7 +32,9 @@ def _save(data: dict[str, dict[str, Any]]) -> None:
     REGISTRY_PATH.write_text(json.dumps(data, indent=2), encoding="utf-8")
 
 
-def advertise(depot: str, path: str, repo: str | None = None, tags: list[str] | None = None, note: str | None = None) -> dict:
+def advertise(
+    depot: str, path: str, repo: str | None = None, tags: list[str] | None = None, note: str | None = None
+) -> dict:
     """Register or update an advertised depot. Called via MCP or REST."""
     p = Path(path)
     if not p.exists():
@@ -82,14 +84,16 @@ def discover_manifests() -> list[dict]:
             raw_path = cfg.get("path", "depot")
             p = (repo_dir / raw_path) if not Path(raw_path).is_absolute() else Path(raw_path)
             if p.exists():
-                out.append({
-                    "depot": cfg.get("depot", repo_dir.name),
-                    "path": str(p.resolve()),
-                    "repo": repo_dir.name,
-                    "tags": cfg.get("tags", []),
-                    "note": cfg.get("note", "via .depot.json manifest"),
-                    "manifest": str(manifest),
-                })
+                out.append(
+                    {
+                        "depot": cfg.get("depot", repo_dir.name),
+                        "path": str(p.resolve()),
+                        "repo": repo_dir.name,
+                        "tags": cfg.get("tags", []),
+                        "note": cfg.get("note", "via .depot.json manifest"),
+                        "manifest": str(manifest),
+                    }
+                )
         except Exception:
             continue
     return out

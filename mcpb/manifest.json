@@ -1,0 +1,24 @@
+{
+  "manifest_version": "0.2",
+  "name": "schip-mcp-depot",
+  "version": "0.1.0",
+  "description": "Centralized fleet file depot — tiered NVMe/spinner storage with LanceDB vector search and SQLite FTS5 sidecar",
+  "author": { "name": "sandraschi" },
+  "server": {
+    "type": "python",
+    "entry_point": "src/depot_mcp/__main__.py",
+    "mcp_config": {
+      "command": "uv",
+      "args": ["run","--directory","${PWD}","python","-m","depot_mcp"],
+      "env": {
+        "PYTHONPATH": "${PWD}/src",
+        "PYTHONUNBUFFERED": "1"
+      }
+    }
+  },
+  "tools": [
+    { "name": "depot_management", "description": "Tiered file depot: upload, download, search, stats, migrate, delete, tag." },
+    { "name": "depot_backup", "description": "Fleet depot backup/restore: list, status, backup, restore." },
+    { "name": "fleet_errors", "description": "Fleet error telemetry: ingest, query, stats." }
+  ]
+}

@@ -1,5 +1,29 @@
 # Changelog — depot-mcp
 
+## 2026-09-19 (evening) — deferred backlog cleared
+
+Backend: `GET /api/status`, `/api/skills`, `/api/v1/logs` (ring buffer);
+LLM `discover` (probes + GPU) / `onboarding` / `chat/stream` (SSE, streamId first);
+provider transport errors map to 503, not 500. Fixed `register_prompts`
+(bare functions are rejected by FastMCP 3.4 - the 4 advertised prompts never
+registered). Canonical CORS regex (Tailscale + LAN + Goliath).
+
+Frontend: zustand `store/llm.ts` (provider/model persistence), `useZoom`
+(Ctrl+Scroll, Ctrl+0, `tauri-zoom` key, CSS fallback), skill-first Chat
+(4 personalities + custom, 100-msg localStorage cap, export/clear, SSE
+streaming, full testids), Dashboard hero + red onboarding CTA, Topbar health
+poll with backoff, Inbox/Skills/Logs pages, Settings LLM provider cards
+(detect/test/key-register server-side only), per-page testids, contrast pass.
+
+Quality: 25 pytest green, coverage ratchet `--cov-fail-under=40` (actual 44%);
+Playwright `e2e/smoke.spec.ts` 3/3 green against the live stack; bun.lock
+committed (npm -> bun), package-lock removed; `docs/ONBOARDING.md`,
+`docs/TROUBLESHOOTING.md`. Backend cold start is slow (~60s, embedding load).
+
+Residual: no Apps Hub fleet-discovery page; Help/browse tables keep dense
+`text-xs` (tabular data, justified); coverage thin spots (backup/depot tools,
+importers); `pyright` not installed locally so the type gate is CI-only.
+
 ## 2026-09-19 — assfix pass (SOTA compliance)
 
 ### Fixed (HIGH)

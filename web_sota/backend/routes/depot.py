@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from fastapi import File, Form, UploadFile
 from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
@@ -53,7 +54,7 @@ def create_router(server: DepoMCPServer):
     from io import BytesIO
     from pathlib import Path
 
-    from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile
+    from fastapi import APIRouter, HTTPException, Query
     from fastapi.responses import StreamingResponse
 
     router = APIRouter(tags=["depot"])
@@ -95,7 +96,8 @@ def create_router(server: DepoMCPServer):
             if tier not in ("auto", "")
             else server.tier_manager.classify(file.filename, file.content_type or "", tag_list)
         )
-        path = await server.file_store.save_file_stream(file_id, resolved_tier, file.filename, file.file)
+        content = await file.read()
+        path = await server.file_store.save_file(file_id, resolved_tier, file.filename, content)
         meta = await server.file_store.file_indexer.index_file(
             file_id=file_id,
             filename=file.filename,

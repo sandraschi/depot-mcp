@@ -117,7 +117,7 @@ class LanceStore:
         }
 
     def index(self, meta: dict) -> None:
-        if not self.table:
+        if self.table is None:
             raise RuntimeError("LanceStore not initialized")
         text = self._build_search_text(meta)
         vector = self.embed([text])[0]
@@ -130,7 +130,7 @@ class LanceStore:
         progress_callback: Callable[[int, int], None] | None = None,
     ) -> int:
         """Embed and add many file rows in GPU-friendly batches."""
-        if not self.table:
+        if self.table is None:
             raise RuntimeError("LanceStore not initialized")
         if not metas:
             return 0
@@ -150,7 +150,7 @@ class LanceStore:
         return total
 
     def search(self, query: str, where: str | None = None, limit: int = 20) -> list[dict]:
-        if not self.table:
+        if self.table is None:
             raise RuntimeError("LanceStore not initialized")
         query_vec = self.embed([query])[0]
         sr = self.table.search(query_vec).limit(limit)
@@ -163,10 +163,12 @@ class LanceStore:
         return results
 
     def update_meta(self, file_id: str, updates: dict) -> None:
-        if not self.table or not self.db:
+        if self.table is None or self.db is None:
             raise RuntimeError("LanceStore not initialized")
         updates["last_accessed"] = time.time()
         rows = self.table.to_arrow().to_pylist()
+        if not rows:
+            return
         for r in rows:
             if r["id"] == file_id:
                 r.update(updates)
@@ -174,23 +176,24 @@ class LanceStore:
         self.table = self.db.open_table(TABLE_NAME)
 
     def delete(self, file_id: str) -> bool:
-        if not self.table or not self.db:
+        if self.table is None or self.db is None:
             raise RuntimeError("LanceStore not initialized")
         rows = self.table.to_arrow().to_pylist()
-        filtered = [r for r in rows if r["id"] != file_id]
-        if len(filtered) == len(rows):
+        if not any(r["id"] == file_id for r in rows):
             return False
-        self.db.create_table(TABLE_NAME, data=filtered, mode="overwrite")
-        self.table = self.db.open_table(TABLE_NAME)
+        # Predicate delete keeps the schema - rewriting from a filtered list
+        # crashes when the last row is removed (empty list has no schema).
+        # file_id is a server-generated uuid4, safe to interpolate.
+        self.table.delete(f"id = '{file_id}'")
         return True
 
     def list_all(self) -> list[dict]:
-        if not self.table:
+        if self.table is None:
             return []
         return self.table.to_arrow().to_pylist()
 
     def stats(self) -> dict:
-        if not self.table:
+        if self.table is None:
             return {"exists": False, "row_count": 0}
         return {
             "exists": True,

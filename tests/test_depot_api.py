@@ -68,3 +68,26 @@ def test_import_migrate_json_bodies(depot_client):
     )
     assert imp.status_code == 200
     assert "scanned" in imp.json() or "imported" in imp.json() or imp.json() is not None
+
+
+def test_upload_download_delete_roundtrip(depot_client):
+    client, _server = depot_client
+    up = client.post(
+        "/api/v1/depot/upload",
+        files={"file": ("probe.txt", b"migrate e2e probe", "text/plain")},
+        data={"tier": "fast"},
+    )
+    assert up.status_code == 200, up.text
+    file_id = up.json()["file_id"]
+
+    down = client.get(f"/api/v1/depot/download/{file_id}")
+    assert down.status_code == 200
+
+    move = client.post("/api/v1/depot/migrate", json={"file_id": file_id, "target_tier": "slow"})
+    assert move.status_code == 200
+
+    back = client.post("/api/v1/depot/migrate", json={"file_id": file_id, "target_tier": "fast"})
+    assert back.status_code == 200
+
+    delete = client.delete(f"/api/v1/depot/files/{file_id}")
+    assert delete.status_code == 200

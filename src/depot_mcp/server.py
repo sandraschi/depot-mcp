@@ -275,6 +275,20 @@ class DepoMCPServer:
                 rows = [r for r in rows if r["level"] == level.upper()]
             return {"results": rows[-limit:], "total": len(rows)}
 
+        # Serve the built SPA under /app (matches vite base + router basename).
+        # Skipped when the frontend was never built - API still works standalone.
+        dist = Path(__file__).resolve().parents[2] / "web_sota" / "frontend" / "dist"
+        if (dist / "index.html").exists():
+
+            @self.app.get("/app/{path:path}")
+            async def spa(path: str):
+                from fastapi.responses import FileResponse
+
+                target = dist / path
+                if path and target.is_file():
+                    return FileResponse(target)
+                return FileResponse(dist / "index.html")
+
         @self.app.post("/api/shutdown")
         async def shutdown() -> dict[str, str]:
             """Orderly exit for the fleet launcher: 200 now, process exits 500 ms later."""

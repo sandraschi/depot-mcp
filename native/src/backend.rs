@@ -1,4 +1,4 @@
-﻿use std::fs::{self, OpenOptions};
+use std::fs::{self, OpenOptions};
 use std::io::{BufRead, BufReader, Write};
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
@@ -92,7 +92,10 @@ pub fn materialize_backend(app: &AppHandle) -> Result<PathBuf, String> {
 
     let bundled = resolve_bundled_backend(app)?;
     log_line(app, &format!("using bundled backend: {}", bundled.display()));
-    Ok(bundled)
+    // Strip Windows extended-length prefix
+    let s = bundled.to_string_lossy().to_string();
+    let clean = s.strip_prefix("\\\\?\\").map(PathBuf::from).unwrap_or(bundled.clone());
+    Ok(clean)
 }
 
 fn free_port(port: u16) {
@@ -128,8 +131,8 @@ pub fn spawn_backend(app: AppHandle, state: &BackendProcess) -> Result<String, S
 
     log_line(
         &app,
-        &format!("spawning {} (cwd {}) on port 10700",
-            backend_path.display(), workdir.display()),
+        &format!("spawning {} (cwd {}) on port {}",
+            backend_path.display(), workdir.display(), BACKEND_PORT),
     );
 
     let mut command = Command::new(&backend_path);
@@ -165,7 +168,7 @@ pub fn spawn_backend(app: AppHandle, state: &BackendProcess) -> Result<String, S
         thread::spawn(move || watch_backend_stream(err, app_handle));
     }
 
-    Ok(format!("Backend starting on port 10700"))
+    Ok(format!("Backend starting on port {}", BACKEND_PORT))
 }
 
 fn watch_backend_stream<R: std::io::Read + Send + 'static>(stream: R, app: AppHandle) {

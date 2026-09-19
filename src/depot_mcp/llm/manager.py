@@ -1,4 +1,4 @@
-"""LLM Manager — provider registration, auto-discovery (glom), and routing."""
+"""LLM Manager - provider registration, auto-discovery (glom), and routing."""
 
 from __future__ import annotations
 

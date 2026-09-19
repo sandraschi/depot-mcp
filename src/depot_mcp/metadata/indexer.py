@@ -1,4 +1,4 @@
-"""File indexer — extract metadata and index into LanceDB + FTS5."""
+"""File indexer - extract metadata and index into LanceDB + FTS5."""
 
 from __future__ import annotations
 

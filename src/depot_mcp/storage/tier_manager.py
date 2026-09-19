@@ -1,4 +1,4 @@
-"""Tier manager — coordinates routing, migration, and policy."""
+"""Tier manager - coordinates routing, migration, and policy."""
 
 from __future__ import annotations
 

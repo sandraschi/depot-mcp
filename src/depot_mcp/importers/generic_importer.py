@@ -1,4 +1,4 @@
-"""Generic directory importer — imports any file type from a given directory."""
+"""Generic directory importer - imports any file type from a given directory."""
 
 from __future__ import annotations
 

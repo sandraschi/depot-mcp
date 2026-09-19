@@ -105,6 +105,10 @@ ignore_missing_imports = true
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+addopts = ["--cov=depot_mcp", "--cov-report=term-missing", "--cov-fail-under=40"]
+
+[tool.coverage.run]
+omit = ["*/tests/*", "*/test_*"]
 
 [tool.uv-dynamic-versioning]
 vcs = "git"

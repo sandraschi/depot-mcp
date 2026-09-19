@@ -34,8 +34,6 @@ def migrate_help() -> Message:
 
 def register_prompts(mcp: FastMCP) -> None:
     """Register all SOTA prompts with the FastMCP instance."""
-    mcp.add_prompt(depot_overview)
-    mcp.add_prompt(search_files)
-    mcp.add_prompt(storage_report)
-    mcp.add_prompt(migrate_help)
+    for fn in (depot_overview, search_files, storage_report, migrate_help):
+        mcp.prompt()(fn)
     logger.info("Registered %s depot-mcp prompts", 4)

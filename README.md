@@ -26,6 +26,7 @@ Every MCP server in the fleet has its own ad-hoc depot. depot-mcp unifies them o
 
 | Guide | Content |
 | :--- | :--- |
+| 🧭 **[Onboarding](docs/ONBOARDING.md)** | First-timer setup: tiers, local LLM, sanity checks. Start here. |
 | 🚀 **[Installation](docs/install.md)** | Getting up and running on Goliath PC. |
 | 🏗️ **[Architecture](docs/architecture.md)** | Storage tiers, search engines, and component layout. |
 | 🛠️ **[Usage](docs/usage.md)** | Uploading, searching, and managing files. |

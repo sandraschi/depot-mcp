@@ -13,6 +13,7 @@ import {
   ScrollText,
   Search,
   Settings,
+  TriangleAlert,
   Upload,
   Wrench,
 } from "lucide-react";
@@ -33,6 +34,7 @@ const navItems = [
   { to: "/stats", icon: BarChart3, label: "Stats" },
   { to: "/chat", icon: MessageSquare, label: "Chat" },
   { to: "/tools", icon: Wrench, label: "Tools" },
+  { to: "/errors", icon: TriangleAlert, label: "Errors" },
   { to: "/skills", icon: BookOpen, label: "Skills" },
   { to: "/logs", icon: ScrollText, label: "Logs" },
   { to: "/help", icon: HelpCircle, label: "Help" },

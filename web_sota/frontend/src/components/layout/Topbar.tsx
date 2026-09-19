@@ -11,6 +11,7 @@ const TITLE_MAP: Record<string, string> = {
   "/chat": "AI Chat",
   "/help": "Documentation",
   "/tools": "MCP Inspector",
+  "/errors": "Fleet Errors",
   "/import": "Import from Fleet",
   "/settings": "Settings",
   "/inbox": "Inbox",

@@ -48,6 +48,18 @@ export default function FileDetail() {
     navigate("/");
   }
 
+  async function migrate(targetTier: string) {
+    const res = await fetch("/api/v1/depot/migrate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ file_id: id, target_tier: targetTier }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      setFile({ ...file, tier: targetTier });
+    }
+  }
+
   if (!file) {
     return <div className="text-gray-500 animate-pulse">Loading file...</div>;
   }
@@ -124,6 +136,30 @@ export default function FileDetail() {
                 />
                 <Button variant="outline" size="sm" onClick={updateTags} data-testid="file-tags-save">
                   Save
+                </Button>
+              </div>
+            </div>
+
+            <div>
+              <span className="text-gray-300 text-sm block mb-1">Tier</span>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => void migrate("fast")}
+                  disabled={file.tier === "fast"}
+                  data-testid="file-migrate-fast"
+                >
+                  Move to fast
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => void migrate("slow")}
+                  disabled={file.tier === "slow"}
+                  data-testid="file-migrate-slow"
+                >
+                  Move to slow
                 </Button>
               </div>
             </div>

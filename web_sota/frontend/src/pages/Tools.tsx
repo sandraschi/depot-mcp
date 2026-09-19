@@ -1,6 +1,15 @@
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Wrench } from "lucide-react";
+import { Activity, Loader2, Wrench } from "lucide-react";
 import { useEffect, useState } from "react";
+
+interface Diagnostics {
+  version: string;
+  fastmcp: string;
+  uptime_seconds: number;
+  tools: string[];
+  ports: { backend: number; frontend: number };
+  fleet_errors: { total: number };
+}
 
 interface ToolInfo {
   portmanteau_tools: string[];
@@ -24,18 +33,23 @@ export default function Tools() {
   const [tools, setTools] = useState<ToolInfo | null>(null);
   const [features, setFeatures] = useState<FeatureInfo | null>(null);
   const [inventory, setInventory] = useState<PromptInfo | null>(null);
+  const [diagnostics, setDiagnostics] = useState<Diagnostics | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/capabilities")
-      .then((r) => r.json())
-      .then((d) => {
+    Promise.allSettled([
+      fetch("/api/capabilities").then((r) => r.json()),
+      fetch("/api/v1/diagnostics").then((r) => (r.ok ? r.json() : null)),
+    ]).then(([caps, diag]) => {
+      if (caps.status === "fulfilled") {
+        const d = caps.value;
         setTools(d.tool_surface);
         setFeatures(d.features);
         setInventory(d.inventory);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
+      }
+      if (diag.status === "fulfilled" && diag.value) setDiagnostics(diag.value);
+      setLoading(false);
+    });
   }, []);
 
   if (loading) {
@@ -83,6 +97,38 @@ export default function Tools() {
             <FeatureRow label="CodeMode" enabled={features?.codemode ?? false} />
           </div>
         </Card>
+
+        {diagnostics && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-gray-100">
+                <Activity size={16} /> Diagnostics
+              </CardTitle>
+            </CardHeader>
+            <dl className="space-y-2 text-sm" data-testid="diagnostics">
+              <div className="flex justify-between">
+                <dt className="text-gray-400">Version</dt>
+                <dd className="text-gray-200 font-mono">
+                  {diagnostics.version} / FastMCP {diagnostics.fastmcp}
+                </dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-gray-400">Uptime</dt>
+                <dd className="text-gray-200 font-mono">{Math.round(diagnostics.uptime_seconds)}s</dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-gray-400">Ports</dt>
+                <dd className="text-gray-200 font-mono">
+                  {diagnostics.ports.backend} / {diagnostics.ports.frontend}
+                </dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-gray-400">Fleet errors stored</dt>
+                <dd className="text-gray-200 font-mono">{diagnostics.fleet_errors.total}</dd>
+              </div>
+            </dl>
+          </Card>
+        )}
 
         {inventory?.prompt_names && inventory.prompt_names.length > 0 && (
           <Card>

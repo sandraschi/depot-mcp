@@ -9,35 +9,32 @@ default:
 
 # Ruff lint + format check
 lint:
-    Set-Location '{{justfile_directory()}}'
-    uv run ruff check .
-    uv run ruff format --check .
+    uv run ruff check .; uv run ruff format --check .
 
 # Ruff + Biome
 lint-all:
-    Set-Location '{{justfile_directory()}}'; uv run ruff check .; uv run ruff format --check .; Set-Location '{{justfile_directory()}}/web_sota/frontend'; npm run lint
+    uv run ruff check .; uv run ruff format --check .; Set-Location '{{justfile_directory()}}/web_sota/frontend'; npm run lint
 
 # Ruff fix + format
 fix:
-    Set-Location '{{justfile_directory()}}'
-    uv run ruff check . --fix --unsafe-fixes
+    uv run ruff check . --fix --unsafe-fixes; uv run ruff format .
+
+# Format only (ruff format)
+fmt:
     uv run ruff format .
 
 # Run test suite
 test:
-    Set-Location '{{justfile_directory()}}'
     uv run pytest -v
 
 # --- Hardening ---
 
 # Bandit security audit
 check-sec:
-    Set-Location '{{justfile_directory()}}'
     uv run bandit -r src/
 
 # Safety dependency audit
 audit-deps:
-    Set-Location '{{justfile_directory()}}'
     uv run safety check
 
 # --- Frontend ---
@@ -54,31 +51,33 @@ fe-fix:
 
 # Start the full stack (calls web_sota/start.ps1)
 run:
-    Set-Location '{{justfile_directory()}}'
-    pwsh -ExecutionPolicy Bypass -File "web_sota/start.ps1"
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -File "{{justfile_directory()}}/web_sota/start.ps1"
+
+# Alias: start the server (same as run)
+serve:
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -File "{{justfile_directory()}}/web_sota/start.ps1"
+
+# Alias: start the frontend dev server only
+web:
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -File "{{justfile_directory()}}/web_sota/start.ps1" -FrontendOnly
 
 # MCP server stdio mode
 mcp:
-    Set-Location '{{justfile_directory()}}'
     uv run depot-mcp --transport stdio
 
 # MCP server HTTP mode
 mcp-http:
-    Set-Location '{{justfile_directory()}}'
     uv run depot-mcp --transport http --port 10727
 
 # MCP server SSE mode with agentic CodeMode
 mcp-agentic:
-    Set-Location '{{justfile_directory()}}'
     uv run depot-mcp --transport sse --port 10727 --agentic
 
 # --- Packaging ---
 
-# Build MCPB package
+# Build MCPB package (fresh stage: wipe+recopy src/ -> mcpb/src/ before pack)
 pack:
-    Set-Location '{{justfile_directory()}}'
-    if (Test-Path 'mcpb.json') { Write-Host 'MCPB config found' -ForegroundColor Green }
-    Write-Host 'Run: mcpb pack . dist/depot-mcp.mcpb' -ForegroundColor Gray
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -File "{{justfile_directory()}}/scripts/just/mcpb-pack.ps1"
 
 # --- LLM ---
 
@@ -110,13 +109,8 @@ rag-cpu-install:
 
 # Clean venv + node_modules
 clean:
-    Set-Location '{{justfile_directory()}}'
-    Remove-Item -Recurse -Force -LiteralPath '.venv' -ErrorAction SilentlyContinue
-    Remove-Item -Recurse -Force -LiteralPath 'web_sota/frontend/node_modules' -ErrorAction SilentlyContinue
-    Write-Host 'Cleaned .venv and node_modules'
+    Remove-Item -Recurse -Force -LiteralPath '{{justfile_directory()}}/.venv' -ErrorAction SilentlyContinue; Remove-Item -Recurse -Force -LiteralPath '{{justfile_directory()}}/web_sota/frontend/node_modules' -ErrorAction SilentlyContinue; Write-Host 'Cleaned .venv and node_modules'
 
 # Bootstrap: install dev deps + pre-commit hook
 bootstrap:
-    uv sync --group dev
-    uv run pre-commit install
-    Write-Host "Pre-commit hooks installed." -ForegroundColor Green
+    uv sync --group dev; uv run pre-commit install; Write-Host "Pre-commit hooks installed." -ForegroundColor Green

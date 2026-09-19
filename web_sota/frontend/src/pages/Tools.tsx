@@ -47,31 +47,33 @@ export default function Tools() {
   }
 
   return (
-    <div>
+    <div data-testid="tools-page">
       <h1 className="text-2xl font-bold text-gray-100 mb-6">MCP Inspector</h1>
 
       <div className="grid gap-6 max-w-2xl">
         <Card>
           <CardHeader>
-            <CardTitle>Tools</CardTitle>
+            <CardTitle className="text-gray-100">Tools</CardTitle>
           </CardHeader>
-          <div className="space-y-3">
+          <div className="space-y-3" data-testid="tools-list">
             {(tools?.portmanteau_tools ?? ["depot_management"]).map((t) => (
               <div key={t} className="flex items-center gap-3 p-3 rounded-lg bg-gray-800/40">
                 <Wrench size={18} className="text-depot-400 shrink-0" />
                 <div>
                   <p className="text-gray-200 font-medium text-sm">{t}</p>
-                  <p className="text-gray-500 text-xs">Portmanteau tool</p>
+                  <p className="text-gray-400 text-sm">Portmanteau tool</p>
                 </div>
               </div>
             ))}
-            <p className="text-xs text-gray-500">{tools?.total ?? 1} tool(s) registered</p>
+            <p className="text-sm text-gray-400" data-testid="tools-count">
+              {tools?.total ?? 1} tool(s) registered
+            </p>
           </div>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Features</CardTitle>
+            <CardTitle className="text-gray-100">Features</CardTitle>
           </CardHeader>
           <div className="space-y-2">
             <FeatureRow label="Sampling" enabled={features?.sampling ?? false} />
@@ -103,8 +105,8 @@ export default function Tools() {
 
 function FeatureRow({ label, enabled, count }: { label: string; enabled: boolean; count?: number }) {
   return (
-    <div className="flex items-center justify-between text-sm">
-      <span className="text-gray-400">{label}</span>
+    <div className="flex items-center justify-between text-sm" data-testid={`feature-${label.toLowerCase()}`}>
+      <span className="text-gray-300">{label}</span>
       <span className={enabled ? "text-green-400" : "text-gray-600"}>
         {enabled ? `Enabled${count != null ? ` (${count})` : ""}` : "Disabled"}
       </span>

@@ -32,21 +32,22 @@ export default function ImportPage() {
   }
 
   return (
-    <div>
+    <div data-testid="import-page">
       <h1 className="text-2xl font-bold text-gray-100 mb-6">Import from Fleet Depot</h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6" data-testid="import-sources">
         {SOURCES.map((s) => (
           <Card
             key={s.id}
+            data-testid={`import-source-${s.id}`}
             className={`cursor-pointer transition-colors ${source === s.id ? "border-depot-500 bg-depot-600/10" : "hover:border-gray-700"}`}
             onClick={() => setSource(s.id)}
           >
             <div className="flex items-center gap-3">
-              <PackageOpen size={20} className={source === s.id ? "text-depot-400" : "text-gray-600"} />
+              <PackageOpen size={20} className={source === s.id ? "text-depot-400" : "text-gray-500"} />
               <div>
                 <p className="text-gray-200 font-medium">{s.label}</p>
-                <p className="text-gray-500 text-xs">{s.desc}</p>
+                <p className="text-gray-400 text-sm">{s.desc}</p>
               </div>
             </div>
           </Card>
@@ -60,13 +61,17 @@ export default function ImportPage() {
           </CardHeader>
           <div className="space-y-4">
             <div>
-              <label className="text-gray-400 text-sm block mb-1">Source Path</label>
+              <label className="text-gray-300 text-sm block mb-1" htmlFor="import-path">
+                Source Path
+              </label>
               <input
+                id="import-path"
+                data-testid="import-path"
                 type="text"
                 value={sourcePath}
                 onChange={(e) => setSourcePath(e.target.value)}
                 placeholder={`e.g. D:\\Dev\\repos\\${source}-mcp\\data\\`}
-                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-gray-200 placeholder-gray-500 text-sm font-mono"
+                className="w-full px-3 py-2 bg-zinc-800 text-zinc-100 border border-gray-700 rounded-lg placeholder-gray-500 text-sm font-mono"
               />
             </div>
             <div className="flex items-center gap-4">
@@ -79,7 +84,7 @@ export default function ImportPage() {
                 />
                 Dry run (scan only)
               </label>
-              <Button onClick={doImport} disabled={loading || !sourcePath}>
+              <Button onClick={doImport} disabled={loading || !sourcePath} data-testid="import-submit">
                 {loading ? "Processing..." : dryRun ? "Scan" : "Import"}
               </Button>
             </div>

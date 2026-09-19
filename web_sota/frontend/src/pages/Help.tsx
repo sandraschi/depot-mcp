@@ -15,7 +15,7 @@ export default function Help() {
   const [activeTab, setActiveTab] = useState("overview");
 
   return (
-    <div className="max-w-4xl">
+    <div className="max-w-4xl" data-testid="help-page">
       <h1 className="text-2xl font-bold text-gray-100 mb-1">Documentation</h1>
       <p className="text-gray-500 text-sm mb-6">depot-mcp — Fleet File Depot v0.1.0</p>
 
@@ -51,7 +51,7 @@ export default function Help() {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="mb-6">
+    <div className="mb-6" data-testid={`help-section-${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}>
       <h2 className="text-lg font-semibold text-gray-100 mb-2">{title}</h2>
       {children}
     </div>

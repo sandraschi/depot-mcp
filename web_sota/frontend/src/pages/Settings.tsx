@@ -1,7 +1,129 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertCircle, Download, HardDrive, Loader2, Upload } from "lucide-react";
+import { useLlmStore } from "@/store/llm";
+import { AlertCircle, Cpu, Download, HardDrive, Loader2, Upload } from "lucide-react";
 import { useEffect, useState } from "react";
+
+function LlmCard() {
+  const { providers, gpuDetected, gpuName, discover, probing } = useLlmStore();
+  const [key, setKey] = useState("");
+  const [url, setUrl] = useState("https://api.openai.com/v1");
+  const [testMsg, setTestMsg] = useState<Record<string, string>>({});
+  const [onboarding, setOnboarding] = useState<{ configured: boolean; recommended_path: string[] } | null>(null);
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: mount-only bootstrap
+  useEffect(() => {
+    void discover();
+    fetch("/api/llm/onboarding")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => d && setOnboarding(d))
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const doTest = async (type: string) => {
+    setTestMsg((m) => ({ ...m, [type]: "testing..." }));
+    try {
+      const r = await fetch(`/api/llm/models?provider=${encodeURIComponent(type)}`);
+      const d = await r.json();
+      setTestMsg((m) => ({
+        ...m,
+        [type]: d.success ? `${d.models?.length ?? 0} model(s) reachable` : `failed: ${d.detail ?? "unknown"}`,
+      }));
+    } catch (e) {
+      setTestMsg((m) => ({ ...m, [type]: `error: ${e instanceof Error ? e.message : String(e)}` }));
+    }
+  };
+
+  const doRegisterOpenAI = async () => {
+    const r = await fetch("/api/llm/providers/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "openai", base_url: url, api_key: key || undefined }),
+    });
+    const d = await r.json();
+    setTestMsg((m) => ({ ...m, openai: r.ok ? "registered (key kept server-side only)" : `failed: ${d.detail}` }));
+    setKey("");
+    void discover();
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-gray-100">
+          <Cpu size={16} /> LLM providers
+          <span className="ml-auto text-sm font-normal text-gray-400">
+            {gpuDetected ? `GPU: ${gpuName}` : "no GPU detected"}
+          </span>
+        </CardTitle>
+      </CardHeader>
+      <div className="grid gap-2 md:grid-cols-2">
+        {(providers.length > 0
+          ? providers
+          : [
+              { type: "ollama", detected: false, latency_ms: 0, default_url: "http://127.0.0.1:11434", free: true },
+              { type: "lm_studio", detected: false, latency_ms: 0, default_url: "http://127.0.0.1:1234", free: true },
+            ]
+        ).map((p) => (
+          <div
+            key={p.type}
+            data-testid={`llm-provider-card-${p.type}`}
+            className="rounded-lg border border-zinc-800 bg-zinc-900 p-3"
+          >
+            <div className="flex items-center gap-2">
+              <span className={`w-2 h-2 rounded-full ${p.detected ? "bg-green-500" : "bg-gray-500"}`} />
+              <span className="text-sm font-medium text-gray-200">{p.type}</span>
+              <span className="ml-auto text-sm text-gray-400">{p.detected ? "detected" : "offline"}</span>
+            </div>
+            <div className="mt-2 text-sm text-gray-400">
+              {p.default_url} · {p.free ? "free local" : "cloud"}
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => void doTest(p.type)}
+              disabled={probing}
+              data-testid={`llm-test-${p.type}`}
+              className="mt-2"
+            >
+              Test
+            </Button>
+            {testMsg[p.type] && <div className="mt-1 text-sm text-gray-400">{testMsg[p.type]}</div>}
+          </div>
+        ))}
+      </div>
+      <div className="mt-3 rounded-lg border border-zinc-800 bg-zinc-900 p-3">
+        <div className="text-sm font-medium text-gray-200 mb-2">Cloud key (OpenAI-compatible, optional)</div>
+        <div className="flex gap-2 flex-wrap">
+          <input
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            placeholder="base URL"
+            className="flex-1 min-w-40 rounded bg-zinc-900 border border-zinc-700 px-2 py-1 text-sm text-zinc-100"
+          />
+          <input
+            type="password"
+            value={key}
+            onChange={(e) => setKey(e.target.value)}
+            placeholder="sk-... (never stored in browser)"
+            data-testid="llm-key-openai"
+            className="flex-1 min-w-40 rounded bg-zinc-900 border border-zinc-700 px-2 py-1 text-sm text-zinc-100"
+          />
+          <Button size="sm" onClick={() => void doRegisterOpenAI()} disabled={!key}>
+            Register
+          </Button>
+        </div>
+        {testMsg.openai && <div className="mt-1 text-sm text-gray-400">{testMsg.openai}</div>}
+      </div>
+      {onboarding && (
+        <div className="mt-3 text-sm text-gray-300" data-testid="llm-onboarding">
+          {onboarding.configured ? "Onboarding complete. " : "Onboarding open: "}
+          {onboarding.recommended_path.join(" → ")}
+        </div>
+      )}
+    </Card>
+  );
+}
 
 interface CapsResponse {
   status: string;
@@ -265,9 +387,10 @@ export default function Settings() {
   if (!caps) return null;
 
   return (
-    <div>
+    <div data-testid="settings-page">
       <h1 className="text-2xl font-bold text-gray-100 mb-6">Settings</h1>
       <div className="grid gap-6 max-w-2xl">
+        <LlmCard />
         <BackupCard />
         <Card>
           <CardHeader>

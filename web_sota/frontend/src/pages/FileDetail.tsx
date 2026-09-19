@@ -53,11 +53,11 @@ export default function FileDetail() {
   }
 
   return (
-    <div>
+    <div data-testid="file-detail-page">
       <button
         type="button"
         onClick={() => navigate(-1)}
-        className="text-gray-500 hover:text-gray-300 flex items-center gap-1 mb-4 text-sm"
+        className="text-gray-400 hover:text-gray-200 flex items-center gap-1 mb-4 text-sm"
       >
         <ArrowLeft size={16} /> Back
       </button>
@@ -65,8 +65,10 @@ export default function FileDetail() {
       <div className="flex items-center gap-4 mb-6">
         <span className="text-4xl">{mimeIcon(file.mime_type)}</span>
         <div>
-          <h1 className="text-2xl font-bold text-gray-100">{file.filename}</h1>
-          <p className="text-gray-500 text-sm">
+          <h1 className="text-2xl font-bold text-gray-100" data-testid="file-detail-name">
+            {file.filename}
+          </h1>
+          <p className="text-gray-400 text-sm">
             {file.mime_type} · {formatBytes(file.size_bytes)}
           </p>
         </div>
@@ -107,16 +109,20 @@ export default function FileDetail() {
             </Button>
 
             <div>
-              <label className="text-gray-400 text-xs block mb-1">Tags</label>
+              <label className="text-gray-300 text-sm block mb-1" htmlFor="file-tags">
+                Tags
+              </label>
               <div className="flex gap-2">
                 <input
+                  id="file-tags"
+                  data-testid="file-tags"
                   type="text"
                   value={tags}
                   onChange={(e) => setTags(e.target.value)}
-                  className="flex-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-gray-200 text-sm placeholder-gray-500"
+                  className="flex-1 px-3 py-2 bg-zinc-800 text-zinc-100 border border-gray-700 rounded-lg text-sm placeholder-gray-500"
                   placeholder="tag1, tag2"
                 />
-                <Button variant="outline" size="sm" onClick={updateTags}>
+                <Button variant="outline" size="sm" onClick={updateTags} data-testid="file-tags-save">
                   Save
                 </Button>
               </div>

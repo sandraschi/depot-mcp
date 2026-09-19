@@ -7,7 +7,9 @@ fragmentation and enables shared state between the two access surfaces.
 from __future__ import annotations
 
 import asyncio
+import collections
 import logging
+import time
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -25,6 +27,27 @@ from depot_mcp.storage import FileStore
 from depot_mcp.storage.tier_manager import TierManager
 
 logger = logging.getLogger(__name__)
+
+
+class _RingBufferHandler(logging.Handler):
+    """In-memory log tail for GET /api/v1/logs (no file needed)."""
+
+    def __init__(self, buf: collections.deque) -> None:
+        super().__init__(level=logging.INFO)
+        self.buf = buf
+
+    def emit(self, record: logging.LogRecord) -> None:
+        import contextlib
+
+        with contextlib.suppress(Exception):
+            self.buf.append(
+                {
+                    "ts": time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime(record.created)),
+                    "level": record.levelname,
+                    "logger": record.name,
+                    "message": record.getMessage(),
+                }
+            )
 
 
 def _register_fastmcp_32_parity(mcp: FastMCP, config: DepoConfig) -> None:
@@ -93,7 +116,12 @@ class DepoMCPServer:
     def __init__(self, config: DepoConfig | None = None, agentic: bool = False) -> None:
         self.config = config or DepoConfig.from_env()
         self.agentic = agentic
+        self._boot_time = time.time()
         self.llm_manager = get_llm_manager()
+        self.log_buffer: collections.deque = collections.deque(maxlen=500)
+        if not getattr(self, "_log_handler", None):
+            self._log_handler = _RingBufferHandler(self.log_buffer)
+            logging.getLogger().addHandler(self._log_handler)
 
         self.file_store = FileStore(self.config)
         self.tier_manager = TierManager(self.config, self.file_store)
@@ -126,7 +154,7 @@ class DepoMCPServer:
             ],
             # Unconditional LAN/Tailscale/WebView regex — explicit origins above
             # are the documented surfaces, this covers DHCP-renamed hosts.
-            allow_origin_regex=r"https?://(localhost|127\.0\.0\.1|goliath|100\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|tauri\.localhost)(:\d+)?",
+            allow_origin_regex=r"https?://(?:[a-zA-Z0-9-]+\.ts\.net|.*?\.tail-[a-f0-9]+\.ts\.net|tauri\.localhost|localhost|127\.0\.0\.1|goliath|192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|100\.\d{1,3}\.\d{1,3}\.\d{1,3})(?::\d+)?$|^tauri://localhost$",
             allow_credentials=True,
             allow_methods=["*"],
             allow_headers=["*"],
@@ -189,19 +217,63 @@ class DepoMCPServer:
         from web_sota.backend.routes.depot import create_router
         from web_sota.backend.routes.fleet import router as fleet_router
         from web_sota.backend.routes.fleet_errors import create_fleet_errors_router
-        from web_sota.backend.routes.llm import router as llm_router
+        from web_sota.backend.routes.llm import create_llm_router
 
         depot_router = create_router(self)
         self.app.include_router(depot_router, prefix="/api/v1")
         self.app.include_router(backup_router, prefix="/api/backup")
         self.app.include_router(fleet_router, prefix="/api/fleet")
         self.app.include_router(capabilities_router, prefix="/api")
-        self.app.include_router(llm_router, prefix="")
+        self.app.include_router(create_llm_router(self), prefix="")
         self.app.include_router(create_fleet_errors_router(self), prefix="/api/v1")
 
         @self.app.get("/health")
         async def health() -> dict[str, str]:
             return {"status": "ok", "service": "depot-mcp"}
+
+        @self.app.get("/api/status")
+        async def status() -> dict:
+            """Richer status: uptime, tool surface, provider health."""
+            static_tools = ["depot_management", "depot_backup", "fleet_errors"]
+            tool_names = static_tools
+            try:
+                listed = await self.mcp.list_tools()
+                tool_names = sorted(t.name for t in listed) or static_tools
+            except Exception:
+                logger.debug("dynamic tool listing unavailable, using static list")
+            providers = {pt.value: p.base_url for pt, p in self.llm_manager.providers.items()}
+            return {
+                "status": "ok",
+                "service": "depot-mcp",
+                "version": "0.1.0",
+                "uptime_seconds": round(time.time() - self._boot_time, 1),
+                "tool_count": len(tool_names),
+                "tools": tool_names,
+                "providers": providers,
+                "ports": {"backend": self.config.port, "frontend": self.config.frontend_port},
+            }
+
+        @self.app.get("/api/skills")
+        async def skills() -> dict:
+            """Skill listing for skill-first chat (name, uri, markdown content)."""
+            out = []
+            skills_dir = Path(__file__).resolve().parent / "skills"
+            for md in sorted(skills_dir.glob("*.md")):
+                try:
+                    content = md.read_text(encoding="utf-8")
+                except Exception:
+                    content = ""
+                out.append({"name": md.stem, "uri": f"skill://{md.stem}", "content": content})
+            return {"skills": out}
+
+        @self.app.get("/api/v1/logs")
+        async def logs(level: str = "", limit: int = 100) -> dict:
+            """In-memory backend log tail for the Logs page."""
+            limit = max(1, min(int(limit), 200))
+            rows = list(self.log_buffer)
+            if level:
+                rows = [r for r in rows if r["level"] == level.upper()]
+            return {"results": rows[-limit:], "total": len(rows)}
 
         @self.app.post("/api/shutdown")
         async def shutdown() -> dict[str, str]:
@@ -215,10 +287,11 @@ class DepoMCPServer:
         @self.app.get("/api/v1/diagnostics")
         async def diagnostics() -> dict:
             """Full diagnostics for CUA-NSIS smoke tests: tools, versions, storage."""
-            tool_names = ["depot_management", "depot_backup", "fleet_errors"]
+            static_tools = ["depot_management", "depot_backup", "fleet_errors"]
+            tool_names = static_tools
             try:
                 listed = await self.mcp.list_tools()
-                tool_names = sorted(t.name for t in listed)
+                tool_names = sorted(t.name for t in listed) or static_tools
             except Exception:
                 logger.debug("dynamic tool listing unavailable, using static list")
             try:

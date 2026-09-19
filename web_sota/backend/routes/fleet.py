@@ -6,7 +6,7 @@ from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
-from depot_mcp.fleet_registry import advertise, list_advertised, list_all_with_fallback, unadvertise, discover_manifests
+from depot_mcp.fleet_registry import advertise, discover_manifests, list_advertised, list_all_with_fallback, unadvertise
 
 router = APIRouter()
 

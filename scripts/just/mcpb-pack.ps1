@@ -1,4 +1,4 @@
-# depot-mcp MCPB pack — fresh stage (wipe+recopy) then pack.
+# depot-mcp MCPB pack - fresh stage (wipe+recopy) then pack.
 # Never edit mcpb/src/ by hand; it is regenerated here on every pack.
 param(
     [string]$Version = "0.1.0"
@@ -28,5 +28,5 @@ New-Item -ItemType Directory -Force -Path $dist | Out-Null
 if (Get-Command mcpb -ErrorAction SilentlyContinue) {
     mcpb pack $RepoRoot "$dist\depot-mcp-v$Version.mcpb"
 } else {
-    Write-Host "mcpb CLI not on PATH — stage verified at mcpb/src/depot_mcp. Pack manually: mcpb pack . dist/depot-mcp-v$Version.mcpb" -ForegroundColor Yellow
+    Write-Host "mcpb CLI not on PATH - stage verified at mcpb/src/depot_mcp. Pack manually: mcpb pack . dist/depot-mcp-v$Version.mcpb" -ForegroundColor Yellow
 }

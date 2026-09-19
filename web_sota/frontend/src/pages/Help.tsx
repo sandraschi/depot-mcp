@@ -543,7 +543,7 @@ function TabAPI() {
             </tr>
             <tr className="border-b border-gray-800">
               <td className="py-2 text-blue-400">GET</td>
-              <td className="py-2 font-mono text-xs text-gray-200">/api/v1/depot/download/{id}</td>
+              <td className="py-2 font-mono text-xs text-gray-200">/api/v1/depot/download/{"{id}"}</td>
               <td className="py-2 text-xs text-gray-400">Stream file download</td>
             </tr>
             <tr className="border-b border-gray-800">
@@ -558,12 +558,12 @@ function TabAPI() {
             </tr>
             <tr className="border-b border-gray-800">
               <td className="py-2 text-red-400">DELETE</td>
-              <td className="py-2 font-mono text-xs text-gray-200">/api/v1/depot/files/{id}</td>
+              <td className="py-2 font-mono text-xs text-gray-200">/api/v1/depot/files/{"{id}"}</td>
               <td className="py-2 text-xs text-gray-400">Delete file</td>
             </tr>
             <tr className="border-b border-gray-800">
               <td className="py-2 text-yellow-400">PATCH</td>
-              <td className="py-2 font-mono text-xs text-gray-200">/api/v1/depot/files/{id}</td>
+              <td className="py-2 font-mono text-xs text-gray-200">/api/v1/depot/files/{"{id}"}</td>
               <td className="py-2 text-xs text-gray-400">Update tags/tier</td>
             </tr>
             <tr className="border-b border-gray-800">

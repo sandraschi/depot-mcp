@@ -43,7 +43,12 @@ export default function AppSidebar({ collapsed, onToggle }: Props) {
       <div className={`flex items-center mb-4 px-3 ${collapsed ? "justify-center" : "gap-2"}`}>
         <HardDrive size={22} className="text-depot-400 shrink-0" />
         {!collapsed && <span className="text-sm font-semibold text-gray-200 truncate">depot-mcp</span>}
-        <button type="button" onClick={onToggle} className="ml-auto p-1.5 rounded-lg text-gray-500 hover:text-gray-300 hover:bg-gray-800/60 transition-colors" title={collapsed ? "Expand" : "Collapse"}>
+        <button
+          type="button"
+          onClick={onToggle}
+          className="ml-auto p-1.5 rounded-lg text-gray-500 hover:text-gray-300 hover:bg-gray-800/60 transition-colors"
+          title={collapsed ? "Expand" : "Collapse"}
+        >
           {collapsed ? <PanelRightOpen size={16} /> : <PanelRightClose size={16} />}
         </button>
       </div>
@@ -64,8 +69,6 @@ export default function AppSidebar({ collapsed, onToggle }: Props) {
           {!collapsed && <span className="text-xs font-medium truncate">{label}</span>}
         </NavLink>
       ))}
-
-
     </aside>
   );
 }

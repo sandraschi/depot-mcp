@@ -17,5 +17,5 @@ foreach ($rel in $Candidates) {
         if ($LASTEXITCODE -ne 0) { $Failed = $true }
     } finally { Pop-Location }
 }
-if ($Failed) { throw "biome check failed — run just fe-fix and re-stage" }
+if ($Failed) { throw "biome check failed - run just fe-fix and re-stage" }
 Write-Host "biome: clean" -ForegroundColor Green

@@ -1,4 +1,6 @@
-"""depot-mcp entry point — CLI with stdio/http/sse transports and agentic mode."""
+import os
+
+"""depot-mcp entry point - CLI with stdio/http/sse transports and agentic mode."""
 
 import argparse
 import asyncio
@@ -38,7 +40,7 @@ def main():
             return
     except Exception:
         pass
-    parser = argparse.ArgumentParser(description="depot-mcp — Fleet File Depot")
+    parser = argparse.ArgumentParser(description="depot-mcp - Fleet File Depot")
     parser.add_argument("--transport", choices=["stdio", "http", "sse"], default="stdio", help="Transport mode")
     parser.add_argument("--port", type=int, default=10727, help="HTTP/SSE port")
     parser.add_argument("--host", default="127.0.0.1", help="Bind host")

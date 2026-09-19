@@ -1,4 +1,4 @@
-"""depot-mcp — Centralized fleet file depot."""
+"""depot-mcp - Centralized fleet file depot."""
 
 
 def main() -> None:

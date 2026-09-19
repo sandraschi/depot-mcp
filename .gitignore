@@ -10,6 +10,8 @@ build/
 # Node
 node_modules/
 web_sota/frontend/dist/
+web_sota/frontend/test-results/
+web_sota/frontend/playwright-report/
 
 # Data
 data/lancedb/

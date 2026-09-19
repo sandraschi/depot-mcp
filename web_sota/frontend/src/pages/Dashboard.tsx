@@ -100,7 +100,7 @@ export default function Dashboard() {
           <span className="flex items-center gap-1.5 text-gray-300">
             <span
               className={`w-2 h-2 rounded-full ${stats ? "bg-green-500" : "bg-red-500"}`}
-              data-testid="backend-dot"
+              data-testid="dashboard-backend-dot"
             />
             Backend {stats ? "connected" : "disconnected"}
           </span>

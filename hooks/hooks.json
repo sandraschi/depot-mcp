@@ -1,0 +1,10 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "type": "text",
+        "text": "## depot-mcp — Session Context\n- Probe GET http://127.0.0.1:10727/api/capabilities for live tools/ports; read CLAUDE.md.\n- Tools: depot_management (files), depot_backup (fleet depots + memops vault), fleet_errors (fleet_error/v1 sink).\n- Tiers via DepoConfig.from_env() (DEPOT_FAST_ROOT/SLOW_ROOT); search = LanceDB + FTS5.\n- Close of work: uv run ruff check src/ + uv run pytest tests/ -q; <=5 files per commit."
+      }
+    ]
+  }
+}

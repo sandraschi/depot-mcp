@@ -1,0 +1,6 @@
+{
+  "name": "depot-mcp",
+  "description": "Fleet file depot: tiered storage, hybrid search, backup/restore",
+  "version": "0.1.0",
+  "hooks": "./hooks/hooks.json"
+}

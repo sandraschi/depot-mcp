@@ -13,7 +13,9 @@ import time
 from pathlib import Path
 from typing import Any
 
-REGISTRY_PATH = Path(__file__).resolve().parents[2] / "data" / "advertised_depots.json"
+from .data_dir import data_dir
+
+REGISTRY_PATH = data_dir() / "advertised_depots.json"
 FLEET_ROOT = Path("D:/Dev/repos")
 MANIFEST_NAME = ".depot.json"
 

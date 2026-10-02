@@ -9,7 +9,7 @@
     Backend = @{
         Kind       = 'module-serve'
         Module     = 'web_sota.backend.server'
-        ServeArgs  = '--port {BackendPort}'
+        ServeArgs  = @('--port', '10727')
         SyncExtras = @('dev')
     }
     Frontend = @{

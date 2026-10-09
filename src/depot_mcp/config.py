@@ -13,6 +13,10 @@ import yaml
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+# Relative paths resolve against the repo root, never the CWD: Claude Desktop
+# spawns stdio servers with cwd=C:\Windows\System32 (BUG-063).
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+
 
 def _discover_drives() -> dict[str, list[str]]:
     """Scan available drives by checking drive letters (fast, no hang)."""
@@ -33,7 +37,7 @@ def _discover_drives() -> dict[str, list[str]]:
 class DepoConfig(BaseSettings):
     """Configuration for depot-mcp."""
 
-    model_config = SettingsConfigDict(env_prefix="DEPOT_", env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(env_prefix="DEPOT_", env_file=str(_REPO_ROOT / ".env"), extra="ignore")
 
     fast_root: Path = Field(
         default_factory=lambda: Path(os.environ.get("DEPOT_FAST_ROOT", "D:\\depot\\fast")),
@@ -98,6 +102,8 @@ class DepoConfig(BaseSettings):
     @classmethod
     def ensure_data_parents(cls, v: Path | str) -> Path:
         path = Path(v) if not isinstance(v, Path) else v
+        if not path.is_absolute():
+            path = _REPO_ROOT / path
         path.parent.mkdir(parents=True, exist_ok=True)
         return path
 

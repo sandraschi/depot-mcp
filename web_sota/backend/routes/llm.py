@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import shutil
@@ -141,7 +142,7 @@ def create_llm_router(server: DepoMCPServer | None = None):
                     "free": True,
                 },
             ],
-            "gpu": _detect_gpu(),
+            "gpu": await asyncio.to_thread(_detect_gpu),
             "localStorage_keys": {"provider": "llm_provider", "model": "llm_model"},
         }
 

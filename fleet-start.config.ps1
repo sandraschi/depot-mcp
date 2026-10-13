@@ -11,6 +11,7 @@
         Module     = 'web_sota.backend.server'
         ServeArgs  = @('--port', '10727')
         SyncExtras = @('dev')
+        SyncOnStart  = $true
     }
     Frontend = @{
         Kind           = 'vite-npm'
